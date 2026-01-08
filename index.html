@@ -1,65 +1,57 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Protected Website</title>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js"></script>
-</head>
-<body>
+  <meta charset="UTF-8">
+  <title>Protected Site</title>
 
-<h2 id="status">Checking login...</h2>
+  <!-- Firebase SDK -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+    import {
+      getAuth,
+      createUserWithEmailAndPassword,
+      signInWithEmailAndPassword,
+      onAuthStateChanged,
+      signOut
+    } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 
-<div id="auth">
-  <input id="email" placeholder="Email">
-  <input id="password" type="password" placeholder="Password">
-  <button onclick="register()">Register</button>
-  <button onclick="login()">Login</button>
-</div>
+    // ✅ YOUR FIREBASE CONFIG
+    const firebaseConfig = {
+      apiKey: "AIzaSyBf8YUdEGpW2h4TEgETiRUaj6fuCgfoe00",
+      authDomain: "website-fe89c.firebaseapp.com",
+      databaseURL: "https://website-fe89c-default-rtdb.firebaseio.com/",
+      projectId: "website-fe89c",
+      storageBucket: "website-fe89c.firebasestorage.app",
+      messagingSenderId: "89840845670",
+      appId: "1:89840845670:web:fece1d927e7017e6aabea7",
+      measurementId: "G-4TP1XHHW6M"
+    };
 
-<div id="content" style="display:none;">
-  <h1>Welcome!</h1>
-  <p>You are logged in.</p>
-  <button onclick="logout()">Logout</button>
-</div>
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
 
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-  import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+    // Elements
+    const authBox = document.getElementById("auth");
+    const content = document.getElementById("content");
+    const status = document.getElementById("status");
 
-  const firebaseConfig = {
-    apiKey: "YOUR_API_KEY",
-    authDomain: "YOUR_PROJECT.firebaseapp.com",
-    projectId: "YOUR_PROJECT_ID",
-    appId: "YOUR_APP_ID"
-  };
+    window.register = () => {
+      createUserWithEmailAndPassword(
+        auth,
+        email.value,
+        password.value
+      ).catch(err => alert(err.message));
+    };
 
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
+    window.login = () => {
+      signInWithEmailAndPassword(
+        auth,
+        email.value,
+        password.value
+      ).catch(err => alert(err.message));
+    };
 
-  window.register = () => {
-    createUserWithEmailAndPassword(auth, email.value, password.value)
-      .catch(alert);
-  };
+    window.logout = () => signOut(auth);
 
-  window.login = () => {
-    signInWithEmailAndPassword(auth, email.value, password.value)
-      .catch(alert);
-  };
-
-  window.logout = () => signOut(auth);
-
-  onAuthStateChanged(auth, user => {
-    if (user) {
-      auth.style.display = "none";
-      content.style.display = "block";
-      status.textContent = "Logged in";
-    } else {
-      auth.style.display = "block";
-      content.style.display = "none";
-      status.textContent = "Not logged in";
-    }
-  });
-</script>
-
-</body>
-</html>
+    onAuthStateChanged(auth, user => {
+      i
