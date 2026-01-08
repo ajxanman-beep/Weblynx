@@ -1,1 +1,65 @@
-poop
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Protected Website</title>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js"></script>
+</head>
+<body>
+
+<h2 id="status">Checking login...</h2>
+
+<div id="auth">
+  <input id="email" placeholder="Email">
+  <input id="password" type="password" placeholder="Password">
+  <button onclick="register()">Register</button>
+  <button onclick="login()">Login</button>
+</div>
+
+<div id="content" style="display:none;">
+  <h1>Welcome!</h1>
+  <p>You are logged in.</p>
+  <button onclick="logout()">Logout</button>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+  import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+
+  const firebaseConfig = {
+    apiKey: "YOUR_API_KEY",
+    authDomain: "YOUR_PROJECT.firebaseapp.com",
+    projectId: "YOUR_PROJECT_ID",
+    appId: "YOUR_APP_ID"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+
+  window.register = () => {
+    createUserWithEmailAndPassword(auth, email.value, password.value)
+      .catch(alert);
+  };
+
+  window.login = () => {
+    signInWithEmailAndPassword(auth, email.value, password.value)
+      .catch(alert);
+  };
+
+  window.logout = () => signOut(auth);
+
+  onAuthStateChanged(auth, user => {
+    if (user) {
+      auth.style.display = "none";
+      content.style.display = "block";
+      status.textContent = "Logged in";
+    } else {
+      auth.style.display = "block";
+      content.style.display = "none";
+      status.textContent = "Not logged in";
+    }
+  });
+</script>
+
+</body>
+</html>
