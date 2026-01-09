@@ -3,116 +3,100 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Chat Room - Pro Admin</title>
+  <title>Chat Room - Pro Admin Fixed</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     
     body { 
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+        font-family: 'Segoe UI', sans-serif; 
         background: #f0f2f5; 
-        color: #333; 
-        overflow: hidden; 
-        display: flex; 
-        height: 100vh;
-        /* Theme Transition */
-        transition: background 0.5s ease, color 0.5s ease;
+        transition: background 0.5s, color 0.5s;
+        display: flex; height: 100vh; overflow: hidden;
     }
     
     /* SIDEBAR */
-    #sidebar {
-      width: 260px; background: white; border-right: 1px solid #ddd;
-      display: flex; flex-direction: column; transition: background 0.5s ease;
-      z-index: 110;
-    }
-    .sidebar-header { padding: 20px; font-weight: bold; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; }
+    #sidebar { width: 260px; background: white; border-right: 1px solid #ddd; display: flex; flex-direction: column; transition: background 0.5s; }
+    .sidebar-header { padding: 20px; font-weight: bold; border-bottom: 1px solid #eee; }
     #memberList { flex: 1; overflow-y: auto; padding: 10px; }
-    .member-item { display: flex; align-items: center; gap: 10px; padding: 8px; border-radius: 8px; margin-bottom: 5px; font-size: 14px; }
-    .status-dot { width: 10px; height: 10px; border-radius: 50%; background: #ccc; }
+    .member-item { display: flex; align-items: center; gap: 10px; padding: 8px; font-size: 14px; }
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #ccc; }
     .status-dot.online { background: #2ecc71; box-shadow: 0 0 5px #2ecc71; }
+
+    /* MAIN */
+    #mainContent { flex: 1; display: flex; flex-direction: column; }
+    .header { height: 60px; background: white; border-bottom: 1px solid #ddd; display: flex; align-items: center; padding: 0 20px; transition: background 0.5s; }
     
-    /* MAIN CHAT */
-    #mainContent { flex: 1; display: flex; flex-direction: column; position: relative; }
-    
-    .header {
-      height: 60px; background: white; border-bottom: 1px solid #ddd;
-      display: flex; align-items: center; padding: 0 20px; z-index: 100;
-      transition: background 0.5s ease;
-    }
-    
-    .admin-btn { padding: 6px 12px; border-radius: 4px; border: none; color: white; cursor: pointer; font-weight: bold; font-size: 11px; margin-left: 5px; display: none; }
+    .admin-btn { padding: 6px 12px; border-radius: 4px; border: none; color: white; cursor: pointer; font-size: 11px; margin-left: 10px; display: none; font-weight: bold; }
     #clearBtn { background: #ff4757; }
     #settingsBtn { background: #2f3542; }
 
-    /* ANIMATED GRADIENT KEYFRAMES */
-    @keyframes gradientBG {
-      0% { background-position: 0% 50%; }
-      50% { background-position: 100% 50%; }
-      100% { background-position: 0% 50%; }
-    }
+    #chatBox { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+    .message { padding: 10px 15px; border-radius: 15px; max-width: 70%; position: relative; transition: all 0.5s; }
+    .message.own { align-self: flex-end; background: #4285f4; color: white; }
+    .message.other { align-self: flex-start; background: white; }
+    .fade-out { opacity: 0; transform: scale(0.8); }
 
-    /* CLEAR CHAT ANIMATION */
-    .fade-out {
-        opacity: 0;
-        transform: scale(0.9);
-        transition: all 0.6s ease;
-    }
-
-    #chatBox { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
-    
-    .message { padding: 12px 16px; border-radius: 15px; max-width: 65%; position: relative; line-height: 1.4; transition: opacity 0.3s ease; }
-    .message.own { align-self: flex-end; background: #4285f4; color: white; border-bottom-right-radius: 2px; }
-    .message.other { align-self: flex-start; background: white; border-bottom-left-radius: 2px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-
-    .admin-bubble { background-size: 200% 200% !important; border: 1px solid rgba(255,255,255,0.3); }
+    /* ADMIN GRADIENTS */
+    @keyframes gradientBG { 0% {background-position:0% 50%} 50% {background-position:100% 50%} 100% {background-position:0% 50%} }
+    .admin-bubble { background-size: 200% 200% !important; }
     .admin-animated { animation: gradientBG 3s ease infinite !important; }
 
-    /* TOOLTIP LOGIC */
-    .message-user { font-size: 11px; font-weight: 800; margin-bottom: 4px; position: relative; cursor: help; display: inline-block; }
-    .admin-tooltip {
-        visibility: hidden; position: absolute; bottom: 120%; left: 0; 
-        background: #222; color: white; padding: 8px; border-radius: 6px;
-        white-space: nowrap; font-size: 10px; z-index: 1000; opacity: 0;
-        transition: opacity 0.2s ease; pointer-events: auto;
-    }
+    /* TOOLTIP */
+    .message-user { font-size: 11px; font-weight: bold; margin-bottom: 3px; position: relative; display: inline-block; cursor: help; }
+    .admin-tooltip { visibility: hidden; position: absolute; bottom: 120%; left: 0; background: #222; color: #fff; padding: 5px; border-radius: 4px; font-size: 10px; opacity: 0; transition: 0.2s; z-index: 10; }
     .message-user:hover .admin-tooltip { visibility: visible; opacity: 1; }
 
-    .delete-btn { color: rgba(255,255,255,0.6); cursor: pointer; font-size: 14px; margin-left: 8px; }
+    /* MODAL */
+    #adminModal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 20px; border-radius: 10px; box-shadow: 0 5px 30px rgba(0,0,0,0.3); z-index: 2000; width: 300px; }
+    .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1500; }
 
-    #inputArea { height: 80px; background: white; border-top: 1px solid #ddd; padding: 15px; display: flex; gap: 10px; transition: background 0.5s ease; }
-    #messageInput { flex: 1; border-radius: 25px; border: 1px solid #ddd; padding: 0 20px; outline: none; background: #f1f2f6; }
-    #sendBtn { background: #4285f4; color: white; border: none; border-radius: 50%; width: 50px; cursor: pointer; font-weight: bold; }
+    #inputArea { height: 70px; background: white; border-top: 1px solid #ddd; padding: 10px 20px; display: flex; gap: 10px; }
+    #messageInput { flex: 1; border-radius: 20px; border: 1px solid #ddd; padding: 0 15px; outline: none; }
+    #sendBtn { background: #4285f4; color: white; border: none; border-radius: 50%; width: 40px; height: 40px; cursor: pointer; }
 
     /* DARK MODE */
-    body.dark-mode, body.dark-mode #sidebar, body.dark-mode .header, body.dark-mode #inputArea { background: #18191a; color: #e4e6eb; border-color: #3e4042; }
-    body.dark-mode .message.other { background: #242526; color: #e4e6eb; }
+    body.dark-mode, body.dark-mode #sidebar, body.dark-mode .header, body.dark-mode #inputArea, body.dark-mode #adminModal { background: #18191a; color: white; border-color: #3e4042; }
+    body.dark-mode .message.other { background: #242526; }
     body.dark-mode #messageInput { background: #3a3b3c; color: white; border: none; }
   </style>
 </head>
 <body>
 
+  <div class="modal-overlay" id="modalOverlay" onclick="closeAdminSettings()"></div>
+  <div id="adminModal">
+    <h3 style="margin-bottom:15px">Admin Customization</h3>
+    <label style="font-size:12px">Gradient Color 1</label>
+    <input type="color" id="g1" style="width:100%; margin-bottom:10px">
+    <label style="font-size:12px">Gradient Color 2</label>
+    <input type="color" id="g2" style="width:100%; margin-bottom:10px">
+    <label style="font-size:12px">Name Color</label>
+    <input type="color" id="nc" style="width:100%; margin-bottom:10px">
+    <label style="font-size:13px"><input type="checkbox" id="animCheck"> Animate Gradient</label>
+    <button onclick="saveAdminStyles()" style="width:100%; padding:10px; background:#4285f4; color:white; border:none; border-radius:5px; margin-top:15px; cursor:pointer">Save Styles</button>
+  </div>
+
   <div id="sidebar">
-    <div class="sidebar-header">Members <span id="onlineCount">0</span></div>
+    <div class="sidebar-header">Members Online: <span id="onlineCount">0</span></div>
     <div id="memberList"></div>
   </div>
 
   <div id="mainContent">
     <div class="header">
-      <button onclick="window.location.href='index.html'" style="padding:5px 10px">Back</button>
-      <button onclick="toggleTheme()" id="themeBtn" style="margin-left:10px; border:none; background:none; cursor:pointer; font-size:18px">🌙</button>
-      <button id="clearBtn" class="admin-btn" onclick="clearChat()">Clear Chat</button>
-      <button id="settingsBtn" class="admin-btn" onclick="document.getElementById('adminModal').style.display='block'">⚙ Admin Styles</button>
+      <button onclick="window.location.href='index.html'" style="padding:5px 10px; cursor:pointer">Back</button>
+      <button onclick="toggleTheme()" style="margin-left:10px; background:none; border:none; cursor:pointer; font-size:18px">🌙</button>
+      <button id="clearBtn" class="admin-btn" onclick="clearChat()">CLEAR</button>
+      <button id="settingsBtn" class="admin-btn" onclick="openAdminSettings()">⚙ STYLES</button>
       
       <div style="margin-left:auto; display:flex; align-items:center; gap:10px">
-        <span id="uName"></span>
-        <div id="uAvatar" style="width:30px; height:30px; background:#4285f4; border-radius:50%; display:flex; align-items:center; justify-content:center; color:white; font-weight:bold">U</div>
+        <span id="uNameDisplay"></span>
       </div>
     </div>
 
     <div id="chatBox"></div>
-    <div id="typingIndicator" style="padding:5px 20px; font-size:12px; height:20px; color:#888"></div>
+    <div id="typingIndicator" style="padding:0 20px; height:20px; font-size:12px; color:gray"></div>
 
     <div id="inputArea">
-      <input type="text" id="messageInput" placeholder="Message..." autocomplete="off">
+      <input type="text" id="messageInput" placeholder="Type a message..." autocomplete="off">
       <button id="sendBtn" onclick="sendMsg()">></button>
     </div>
   </div>
@@ -120,7 +104,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
-    import { getDatabase, ref, push, set, onValue, onChildAdded, update, remove, serverTimestamp, onDisconnect, get, child } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+    import { getDatabase, ref, push, set, onValue, onChildAdded, update, remove, serverTimestamp, onDisconnect } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCN8ypq4TxhLwjseqnDJneBO2j_BlARz0M",
@@ -135,48 +119,55 @@
     
     let user = null, isAdmin = false, myStyles = {};
 
-    // --- FIX: Typing Function ---
-    window.handleTyping = () => {
-      if(!user) return;
-      const tRef = ref(db, `typing/${user.uid}`);
-      set(tRef, document.getElementById('uName').textContent);
-      setTimeout(() => remove(tRef), 2000);
+    // --- Modal Controls ---
+    window.openAdminSettings = () => {
+      document.getElementById('adminModal').style.display = 'block';
+      document.getElementById('modalOverlay').style.display = 'block';
     };
-
-    document.getElementById('messageInput').addEventListener('input', window.handleTyping);
+    window.closeAdminSettings = () => {
+      document.getElementById('adminModal').style.display = 'none';
+      document.getElementById('modalOverlay').style.display = 'none';
+    };
 
     onAuthStateChanged(auth, u => {
       if(!u) return;
       user = u;
       
+      // Presence
       const pRef = ref(db, `presence/${u.uid}`);
       set(pRef, true);
       onDisconnect(pRef).remove();
 
       onValue(ref(db, `users/${u.uid}`), s => {
-        const data = s.val() || {};
-        isAdmin = data.isAdmin || false;
-        myStyles = { g1: data.g1, g2: data.g2, nc: data.nc, anim: data.anim };
+        const d = s.val() || {};
+        isAdmin = d.isAdmin || false;
+        myStyles = { g1: d.g1||'#4285f4', g2: d.g2||'#9b51e0', nc: d.nc||'#ffffff', anim: d.anim||false };
         
-        document.getElementById('uName').textContent = data.username || user.email.split('@')[0];
-        if(isAdmin) document.querySelectorAll('.admin-btn').forEach(b => b.style.display='block');
-        if(data.theme === 'dark') document.body.classList.add('dark-mode');
+        document.getElementById('uNameDisplay').textContent = d.username || user.email.split('@')[0];
+        if(isAdmin) {
+            document.getElementById('clearBtn').style.display = 'block';
+            document.getElementById('settingsBtn').style.display = 'block';
+            // Sync modal inputs
+            document.getElementById('g1').value = myStyles.g1;
+            document.getElementById('g2').value = myStyles.g2;
+            document.getElementById('nc').value = myStyles.nc;
+            document.getElementById('animCheck').checked = myStyles.anim;
+        }
+        if(d.theme === 'dark') document.body.classList.add('dark-mode');
       });
 
       loadMembers();
       loadMessages();
+      setupTyping();
     });
 
-    // --- Animation: Clear Chat ---
-    window.clearChat = () => {
-        if(!confirm("Clear everything?")) return;
-        const messages = document.querySelectorAll('.message');
-        messages.forEach(m => m.classList.add('fade-out'));
-        
-        setTimeout(() => {
-            set(ref(db, 'messages'), null);
-            document.getElementById('chatBox').innerHTML = "";
-        }, 6000); // Allow time for animation
+    window.saveAdminStyles = () => {
+      update(ref(db, `users/${user.uid}`), {
+        g1: document.getElementById('g1').value,
+        g2: document.getElementById('g2').value,
+        nc: document.getElementById('nc').value,
+        anim: document.getElementById('animCheck').checked
+      }).then(() => closeAdminSettings());
     };
 
     window.toggleTheme = () => {
@@ -184,57 +175,19 @@
       update(ref(db, `users/${user.uid}`), { theme: isDark ? 'dark' : 'light' });
     };
 
-    function loadMessages() {
-      const box = document.getElementById('chatBox');
-      onChildAdded(ref(db, 'messages'), s => {
-        const m = s.val();
-        const isOwn = m.userId === user.uid;
-        const div = document.createElement('div');
-        div.className = `message ${isOwn?'own':'other'} ${m.isAdminMsg?'admin-bubble':''}`;
-        
-        if(m.isAdminMsg) {
-          div.style.background = `linear-gradient(45deg, ${m.g1}, ${m.g2})`;
-          if(m.anim) div.classList.add('admin-animated');
-        }
-
-        const userWrap = document.createElement('div');
-        userWrap.className = 'message-user';
-        userWrap.style.color = m.nc || '';
-        userWrap.textContent = isOwn ? 'You' : m.username;
-
-        // Admin Hover Tooltip
-        if(isAdmin && !isOwn) {
-            const tip = document.createElement('div');
-            tip.className = 'admin-tooltip';
-            tip.innerHTML = `${m.email} <br> <button onclick="banUser('${m.userId}')" style="background:red; color:white; border:none; padding:2px 5px; border-radius:3px; cursor:pointer; margin-top:5px">BAN</button>`;
-            userWrap.appendChild(tip);
-        }
-
-        div.appendChild(userWrap);
-        const txt = document.createElement('div');
-        txt.innerHTML = `${m.text} ${isOwn || isAdmin ? `<span class="delete-btn" onclick="del('${s.key}')">&times;</span>`:''}`;
-        div.appendChild(txt);
-
-        box.appendChild(div);
-        box.scrollTop = box.scrollHeight;
-      });
+    function setupTyping() {
+        const input = document.getElementById('messageInput');
+        input.addEventListener('input', () => {
+            if(!user) return;
+            set(ref(db, `typing/${user.uid}`), document.getElementById('uNameDisplay').textContent);
+            setTimeout(() => remove(ref(db, `typing/${user.uid}`)), 2000);
+        });
+        onValue(ref(db, 'typing'), s => {
+            const d = s.val();
+            const names = d ? Object.keys(d).filter(k => k !== user.uid).map(k => d[k]) : [];
+            document.getElementById('typingIndicator').textContent = names.length ? names.join(', ') + ' is typing...' : '';
+        });
     }
-
-    // Rest of the logic (loadMembers, sendMsg, etc) stays the same
-    window.sendMsg = () => {
-      const input = document.getElementById('messageInput');
-      if(!input.value.trim()) return;
-      push(ref(db, 'messages'), {
-        text: input.value,
-        userId: user.uid,
-        username: document.getElementById('uName').textContent,
-        email: user.email,
-        isAdminMsg: isAdmin,
-        g1: myStyles.g1, g2: myStyles.g2, nc: myStyles.nc, anim: myStyles.anim,
-        timestamp: serverTimestamp()
-      });
-      input.value = "";
-    };
 
     function loadMembers() {
         onValue(ref(db, 'users'), uSnap => {
@@ -243,15 +196,65 @@
                 const online = pSnap.val() || {};
                 const list = document.getElementById('memberList');
                 list.innerHTML = "";
+                let count = 0;
                 Object.keys(members).forEach(uid => {
+                    const isOnline = online[uid] ? true : false;
+                    if(isOnline) count++;
                     const item = document.createElement('div');
                     item.className = 'member-item';
-                    item.innerHTML = `<div class="status-dot ${online[uid]?'online':''}"></div><span>${members[uid].username || 'User'}</span>`;
+                    item.innerHTML = `<div class="status-dot ${isOnline?'online':''}"></div><span>${members[uid].username || 'User'}</span>`;
                     list.appendChild(item);
                 });
+                document.getElementById('onlineCount').textContent = count;
             });
         });
     }
+
+    window.clearChat = () => {
+        if(!confirm("Clear all messages?")) return;
+        document.querySelectorAll('.message').forEach(m => m.classList.add('fade-out'));
+        setTimeout(() => set(ref(db, 'messages'), null), 600);
+    };
+
+    function loadMessages() {
+        const box = document.getElementById('chatBox');
+        onChildAdded(ref(db, 'messages'), s => {
+            const m = s.val();
+            const isOwn = m.userId === user.uid;
+            const div = document.createElement('div');
+            div.className = `message ${isOwn?'own':'other'} ${m.isAdminMsg?'admin-bubble':''}`;
+            if(m.isAdminMsg) {
+                div.style.background = `linear-gradient(45deg, ${m.g1}, ${m.g2})`;
+                if(m.anim) div.classList.add('admin-animated');
+            }
+            const userSpan = document.createElement('div');
+            userSpan.className = 'message-user';
+            userSpan.style.color = m.nc || '';
+            userSpan.textContent = isOwn ? 'You' : m.username;
+            if(isAdmin && !isOwn) {
+                userSpan.innerHTML += `<div class="admin-tooltip">${m.email}</div>`;
+            }
+            div.appendChild(userSpan);
+            const txt = document.createElement('div');
+            txt.innerHTML = `${m.text} ${isOwn||isAdmin ? `<span onclick="del('${s.key}')" style="cursor:pointer;opacity:0.5;margin-left:5px">&times;</span>`:''}`;
+            div.appendChild(txt);
+            box.appendChild(div);
+            box.scrollTop = box.scrollHeight;
+        });
+        onValue(ref(db, 'messages'), s => { if(!s.exists()) box.innerHTML = ""; });
+    }
+
+    window.sendMsg = () => {
+        const input = document.getElementById('messageInput');
+        if(!input.value.trim()) return;
+        push(ref(db, 'messages'), {
+            text: input.value, userId: user.uid, email: user.email,
+            username: document.getElementById('uNameDisplay').textContent,
+            isAdminMsg: isAdmin, g1: myStyles.g1, g2: myStyles.g2, nc: myStyles.nc, anim: myStyles.anim,
+            timestamp: serverTimestamp()
+        });
+        input.value = "";
+    };
 
     window.del = (id) => remove(ref(db, `messages/${id}`));
     document.getElementById('messageInput').addEventListener('keypress', e => { if(e.key==='Enter') sendMsg(); });
