@@ -29,6 +29,21 @@
     
     .header-title { margin-left: 20px; font-size: 20px; font-weight: bold; }
     
+    /* ADMIN BUTTON (Hidden by default) */
+    #adminBtn {
+      display: none; /* Hidden unless user is admin */
+      margin-left: 15px;
+      padding: 8px 16px;
+      background: #ff4444;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 12px;
+    }
+    #adminBtn:hover { background: #cc0000; }
+    
     .user-info { margin-left: auto; display: flex; align-items: center; gap: 10px; }
     
     .avatar {
@@ -105,6 +120,8 @@
   <div class="header">
     <button class="back-btn" onclick="goBack()">← Back</button>
     <div class="header-title">Chat Room</div>
+    <button id="adminBtn" onclick="clearAllMessages()">CLEAR CHAT</button>
+    
     <div class="user-info">
       <div class="avatar" id="userAvatar">U</div>
       <span id="headerUsername">Username</span>
@@ -123,7 +140,7 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
     import {
-      getDatabase, ref, push, remove, onChildAdded, onChildRemoved, onValue, set, get, child, serverTimestamp
+      getDatabase, ref, push, remove, set, onChildAdded, onChildRemoved, onValue, get, child, serverTimestamp
     } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
     
     const firebaseConfig = {
@@ -143,22 +160,28 @@
     
     let currentUser = null;
     let currentUsername = "User";
+    let isAdmin = false;
     let typingTimeout = null;
 
     window.goBack = () => { window.location.href = 'index.html'; };
     window.handleKeyPress = (e) => { if (e.key === 'Enter') sendMessage(); };
 
-    // TYPING LOGIC
+    // --- ADMIN FUNCTION: CLEAR ALL MESSAGES ---
+    window.clearAllMessages = () => {
+      if (isAdmin && confirm("ADMIN ACTION: Are you sure you want to delete ALL messages for everyone?")) {
+        set(ref(database, 'messages'), null)
+          .then(() => {
+             // Reload page to clear local DOM clearly
+             window.location.reload(); 
+          })
+          .catch((error) => alert("Error: " + error.message));
+      }
+    };
+
     window.handleTyping = () => {
       if (!currentUser) return;
-      
-      // Set typing status to true
       set(ref(database, `typing/${currentUser.uid}`), currentUsername);
-
-      // Clear existing timeout
       clearTimeout(typingTimeout);
-
-      // Remove typing status after 2 seconds of no typing
       typingTimeout = setTimeout(() => {
         remove(ref(database, `typing/${currentUser.uid}`));
       }, 2000);
@@ -173,11 +196,11 @@
         text: message,
         username: currentUsername,
         userId: currentUser.uid,
+        email: currentUser.email, // Storing email for admin visibility
         timestamp: serverTimestamp()
       });
       
       input.value = "";
-      // Immediately remove typing status when message is sent
       remove(ref(database, `typing/${currentUser.uid}`));
     };
 
@@ -208,11 +231,8 @@
           });
         }
 
-        if (typers.length > 0) {
-          indicator.textContent = typers.join(", ") + (typers.length > 1 ? " are typing..." : " is typing...");
-        } else {
-          indicator.textContent = "";
-        }
+        indicator.textContent = typers.length > 0 ? 
+          typers.join(", ") + (typers.length > 1 ? " are typing..." : " is typing...") : "";
       });
     }
 
@@ -220,6 +240,9 @@
       const chatBox = document.getElementById("chatBox");
       const messagesRef = ref(database, 'messages');
       
+      // Clear box initially to prevent duplicates if function called twice
+      chatBox.innerHTML = "";
+
       onChildAdded(messagesRef, (snapshot) => {
         const msg = snapshot.val();
         const msgId = snapshot.key;
@@ -238,10 +261,12 @@
         textSpan.className = "message-text";
         textSpan.textContent = msg.text;
 
-        if (isOwn) {
+        // Show Delete Button if: It's your message OR you are an Admin
+        if (isOwn || isAdmin) {
           const delSpan = document.createElement("span");
           delSpan.className = "delete-btn";
           delSpan.innerHTML = "&times;";
+          delSpan.title = isAdmin ? "Admin Delete" : "Delete";
           delSpan.onclick = () => deleteMessage(msgId);
           textSpan.appendChild(delSpan);
         }
@@ -262,21 +287,44 @@
       });
     }
     
+    // --- MAIN AUTH CHECK ---
     onAuthStateChanged(auth, async (user) => {
       if (!user) { window.location.href = 'index.html'; return; }
       currentUser = user;
       
-      const snapshot = await get(child(dbRef, `users/${user.uid}`));
-      currentUsername = snapshot.exists() ? snapshot.val().username : user.email.split('@')[0];
-      
-      document.getElementById("headerUsername").textContent = currentUsername;
-      document.getElementById("userAvatar").textContent = currentUsername.charAt(0).toUpperCase();
-      
-      const appSnap = await get(child(dbRef, `users/${user.uid}/appearance`));
-      if (appSnap.exists() && appSnap.val() === 'dark') document.body.classList.add('dark-mode');
-      
-      loadMessages();
-      setupTypingListener();
+      try {
+        // Fetch User Data including isAdmin status
+        const snapshot = await get(child(dbRef, `users/${user.uid}`));
+        const userData = snapshot.exists() ? snapshot.val() : {};
+        
+        currentUsername = userData.username || user.email.split('@')[0];
+        isAdmin = userData.isAdmin === true; // Check if admin
+
+        // Update UI
+        document.getElementById("headerUsername").textContent = currentUsername;
+        document.getElementById("userAvatar").textContent = currentUsername.charAt(0).toUpperCase();
+        
+        // Show Admin Button if admin
+        if (isAdmin) {
+          document.getElementById("adminBtn").style.display = "block";
+        }
+
+        // Save/Update user data in DB (Email + Admin status preservation)
+        // We use update so we don't overwrite existing isAdmin flags
+        const updates = {};
+        updates[`users/${user.uid}/email`] = user.email;
+        updates[`users/${user.uid}/username`] = currentUsername;
+        // updates[`users/${user.uid}/isAdmin`] = isAdmin; // Don't overwrite this here!
+        
+        // Appearance
+        if (userData.appearance === 'dark') document.body.classList.add('dark-mode');
+        
+        loadMessages();
+        setupTypingListener();
+        
+      } catch (error) {
+        console.error("Error fetching user data:", error);
+      }
     });
   </script>
 </body>
