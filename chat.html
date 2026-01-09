@@ -5,11 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Chat Room</title>
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
     
     body {
       font-family: Arial, sans-serif;
@@ -21,78 +17,41 @@
     
     /* HEADER */
     .header {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 60px;
-      background: white;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-      display: flex;
-      align-items: center;
-      padding: 0 20px;
-      z-index: 100;
-      transition: background 0.3s ease;
+      position: fixed; top: 0; left: 0; width: 100%; height: 60px;
+      background: white; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      display: flex; align-items: center; padding: 0 20px; z-index: 100;
     }
     
     .back-btn {
-      padding: 8px 16px;
-      background: #4285f4;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
+      padding: 8px 16px; background: #4285f4; color: white;
+      border: none; border-radius: 4px; cursor: pointer;
     }
     
-    .back-btn:hover { background: #357ae8; }
+    .header-title { margin-left: 20px; font-size: 20px; font-weight: bold; }
     
-    .header-title {
-      margin-left: 20px;
-      font-size: 20px;
-      font-weight: bold;
-    }
-    
-    .user-info {
-      margin-left: auto;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
+    .user-info { margin-left: auto; display: flex; align-items: center; gap: 10px; }
     
     .avatar {
-      width: 35px;
-      height: 35px;
-      border-radius: 50%;
-      background: #4285f4;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: white;
-      font-weight: bold;
+      width: 35px; height: 35px; border-radius: 50%; background: #4285f4;
+      display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;
     }
     
     /* CHAT CONTAINER */
     #chatBox {
-      position: absolute;
-      top: 60px;
-      left: 0;
-      right: 0;
-      bottom: 70px;
-      padding: 20px;
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
+      position: absolute; top: 60px; left: 0; right: 0; bottom: 90px;
+      padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px;
     }
     
+    /* TYPING INDICATOR */
+    #typingIndicator {
+      position: fixed; bottom: 75px; left: 20px; font-size: 12px;
+      font-style: italic; color: #666; height: 15px;
+    }
+
     /* MESSAGE STYLES */
     .message {
-      padding: 10px 15px;
-      border-radius: 12px;
-      max-width: 70%;
-      word-wrap: break-word;
-      animation: slideIn 0.2s ease;
-      position: relative;
+      padding: 10px 15px; border-radius: 12px; max-width: 70%;
+      word-wrap: break-word; animation: slideIn 0.2s ease; position: relative;
     }
     
     @keyframes slideIn {
@@ -100,88 +59,37 @@
       to { opacity: 1; transform: translateY(0); }
     }
     
-    .message.own {
-      background: #4285f4;
-      color: white;
-      margin-left: auto;
-      border-bottom-right-radius: 4px;
-    }
+    .message.own { background: #4285f4; color: white; margin-left: auto; border-bottom-right-radius: 4px; }
+    .message.other { background: #e8e8e8; color: #333; margin-right: auto; border-bottom-left-radius: 4px; }
     
-    .message.other {
-      background: #e8e8e8;
-      color: #333;
-      margin-right: auto;
-      border-bottom-left-radius: 4px;
-    }
+    .message-user { font-size: 11px; opacity: 0.7; margin-bottom: 3px; font-weight: bold; }
+    .message.own .message-user { text-align: right; }
     
-    .message-user {
-      font-size: 11px;
-      opacity: 0.7;
-      margin-bottom: 3px;
-      font-weight: bold;
-    }
-
-    /* Keep the name right-aligned on your own messages */
-    .message.own .message-user {
-        text-align: right;
-    }
-    
-    .message-text {
-      font-size: 14px;
-      line-height: 1.4;
-      display: block;
-    }
+    .message-text { font-size: 14px; line-height: 1.4; display: block; }
 
     .delete-btn {
-      margin-left: 8px;
-      cursor: pointer;
-      opacity: 0.6;
-      font-weight: bold;
-      font-size: 16px;
-      color: #ffcccc; /* Lighter color for own messages */
-      transition: color 0.2s;
+      margin-left: 8px; cursor: pointer; opacity: 0.6; font-weight: bold;
+      font-size: 16px; color: #ffcccc; transition: color 0.2s;
     }
-
     .delete-btn:hover { color: #ff4d4d; }
     
-    .message-time {
-      font-size: 10px;
-      opacity: 0.6;
-      margin-top: 3px;
-    }
+    .message-time { font-size: 10px; opacity: 0.6; margin-top: 3px; }
     
     /* INPUT BOX */
     #messageInputBox {
-      position: fixed;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      height: 70px;
-      padding: 15px 20px;
-      background: white;
-      display: flex;
-      gap: 10px;
-      box-shadow: 0 -2px 5px rgba(0,0,0,0.1);
-      align-items: center;
+      position: fixed; left: 0; right: 0; bottom: 0; height: 70px;
+      padding: 15px 20px; background: white; display: flex; gap: 10px;
+      box-shadow: 0 -2px 5px rgba(0,0,0,0.1); align-items: center;
     }
     
     #messageInput {
-      flex: 1;
-      padding: 12px 15px;
-      border-radius: 25px;
-      border: 1px solid #ddd;
-      background: #f5f5f5;
-      outline: none;
+      flex: 1; padding: 12px 15px; border-radius: 25px;
+      border: 1px solid #ddd; background: #f5f5f5; outline: none;
     }
     
     #sendBtn {
-      padding: 12px 24px;
-      background: #4285f4;
-      color: white;
-      border: none;
-      border-radius: 25px;
-      cursor: pointer;
-      font-weight: bold;
+      padding: 12px 24px; background: #4285f4; color: white;
+      border: none; border-radius: 25px; cursor: pointer; font-weight: bold;
     }
 
     /* DARK MODE */
@@ -190,6 +98,7 @@
     body.dark-mode .message.other { background: #2c2c2c; color: white; }
     body.dark-mode #messageInputBox { background: #2c2c2c; }
     body.dark-mode #messageInput { background: #1a1a1a; color: white; border-color: #444; }
+    body.dark-mode #typingIndicator { color: #aaa; }
   </style>
 </head>
 <body>
@@ -203,9 +112,10 @@
   </div>
 
   <div id="chatBox"></div>
+  <div id="typingIndicator"></div>
 
   <div id="messageInputBox">
-    <input id="messageInput" type="text" placeholder="Type a message..." onkeypress="handleKeyPress(event)">
+    <input id="messageInput" type="text" placeholder="Type a message..." onkeypress="handleKeyPress(event)" oninput="handleTyping()">
     <button id="sendBtn" onclick="sendMessage()">Send</button>
   </div>
 
@@ -213,7 +123,7 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
     import {
-      getDatabase, ref, push, remove, onChildAdded, onChildRemoved, get, child, serverTimestamp
+      getDatabase, ref, push, remove, onChildAdded, onChildRemoved, onValue, set, get, child, serverTimestamp
     } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
     
     const firebaseConfig = {
@@ -233,21 +143,42 @@
     
     let currentUser = null;
     let currentUsername = "User";
-    
+    let typingTimeout = null;
+
     window.goBack = () => { window.location.href = 'index.html'; };
     window.handleKeyPress = (e) => { if (e.key === 'Enter') sendMessage(); };
+
+    // TYPING LOGIC
+    window.handleTyping = () => {
+      if (!currentUser) return;
+      
+      // Set typing status to true
+      set(ref(database, `typing/${currentUser.uid}`), currentUsername);
+
+      // Clear existing timeout
+      clearTimeout(typingTimeout);
+
+      // Remove typing status after 2 seconds of no typing
+      typingTimeout = setTimeout(() => {
+        remove(ref(database, `typing/${currentUser.uid}`));
+      }, 2000);
+    };
     
     window.sendMessage = () => {
       const input = document.getElementById("messageInput");
       const message = input.value.trim();
       if (!message || !currentUser) return;
+
       push(ref(database, 'messages'), {
         text: message,
         username: currentUsername,
         userId: currentUser.uid,
         timestamp: serverTimestamp()
       });
+      
       input.value = "";
+      // Immediately remove typing status when message is sent
+      remove(ref(database, `typing/${currentUser.uid}`));
     };
 
     window.deleteMessage = (msgId) => {
@@ -262,6 +193,29 @@
       return date.getHours().toString().padStart(2, '0') + ":" + date.getMinutes().toString().padStart(2, '0');
     }
     
+    function setupTypingListener() {
+      const typingRef = ref(database, 'typing');
+      onValue(typingRef, (snapshot) => {
+        const typingData = snapshot.val();
+        const indicator = document.getElementById("typingIndicator");
+        let typers = [];
+
+        if (typingData) {
+          Object.keys(typingData).forEach(uid => {
+            if (uid !== currentUser.uid) {
+              typers.push(typingData[uid]);
+            }
+          });
+        }
+
+        if (typers.length > 0) {
+          indicator.textContent = typers.join(", ") + (typers.length > 1 ? " are typing..." : " is typing...");
+        } else {
+          indicator.textContent = "";
+        }
+      });
+    }
+
     function loadMessages() {
       const chatBox = document.getElementById("chatBox");
       const messagesRef = ref(database, 'messages');
@@ -275,7 +229,6 @@
         messageDiv.id = `msg-${msgId}`;
         messageDiv.className = `message ${isOwn ? 'own' : 'other'}`;
         
-        // --- SHOW USERNAME ON ALL MESSAGES ---
         const userSpan = document.createElement("div");
         userSpan.className = "message-user";
         userSpan.textContent = isOwn ? "You" : (msg.username || "Unknown");
@@ -312,16 +265,18 @@
     onAuthStateChanged(auth, async (user) => {
       if (!user) { window.location.href = 'index.html'; return; }
       currentUser = user;
+      
       const snapshot = await get(child(dbRef, `users/${user.uid}`));
       currentUsername = snapshot.exists() ? snapshot.val().username : user.email.split('@')[0];
+      
       document.getElementById("headerUsername").textContent = currentUsername;
       document.getElementById("userAvatar").textContent = currentUsername.charAt(0).toUpperCase();
       
-      // Load appearance
       const appSnap = await get(child(dbRef, `users/${user.uid}/appearance`));
       if (appSnap.exists() && appSnap.val() === 'dark') document.body.classList.add('dark-mode');
       
       loadMessages();
+      setupTypingListener();
     });
   </script>
 </body>
