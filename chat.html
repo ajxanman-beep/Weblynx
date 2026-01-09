@@ -94,17 +94,12 @@
       max-width: 70%;
       word-wrap: break-word;
       animation: slideIn 0.2s ease;
+      position: relative;
     }
     
     @keyframes slideIn {
-      from {
-        opacity: 0;
-        transform: translateY(10px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
     }
     
     .message.own {
@@ -132,6 +127,21 @@
     .message-text {
       font-size: 14px;
       line-height: 1.4;
+    }
+
+    .delete-btn {
+      margin-left: 8px;
+      cursor: pointer;
+      opacity: 0.5;
+      font-weight: bold;
+      font-size: 16px;
+      vertical-align: middle;
+      transition: opacity 0.2s;
+    }
+
+    .delete-btn:hover {
+      opacity: 1;
+      color: #ff4d4d;
     }
     
     .message-time {
@@ -184,66 +194,25 @@
       transition: background 0.3s ease;
     }
     
-    #sendBtn:hover {
-      background: #357ae8;
-    }
-    
-    #sendBtn:active {
-      transform: scale(0.95);
-    }
+    #sendBtn:hover { background: #357ae8; }
+    #sendBtn:active { transform: scale(0.95); }
     
     /* DARK MODE */
-    body.dark-mode {
-      background: #1a1a1a;
-      color: white;
-    }
-    
-    body.dark-mode .header {
-      background: #2c2c2c;
-      color: white;
-    }
-    
-    body.dark-mode .message.other {
-      background: #2c2c2c;
-      color: white;
-    }
-    
-    body.dark-mode #messageInputBox {
-      background: #2c2c2c;
-    }
-    
-    body.dark-mode #messageInput {
-      background: #1a1a1a;
-      color: white;
-      border-color: #444;
-    }
-    
-    body.dark-mode #messageInput:focus {
-      background: #333;
-      border-color: #4285f4;
-    }
+    body.dark-mode { background: #1a1a1a; color: white; }
+    body.dark-mode .header { background: #2c2c2c; color: white; }
+    body.dark-mode .message.other { background: #2c2c2c; color: white; }
+    body.dark-mode #messageInputBox { background: #2c2c2c; }
+    body.dark-mode #messageInput { background: #1a1a1a; color: white; border-color: #444; }
+    body.dark-mode #messageInput:focus { background: #333; border-color: #4285f4; }
     
     /* SCROLLBAR */
-    #chatBox::-webkit-scrollbar {
-      width: 8px;
-    }
-    
-    #chatBox::-webkit-scrollbar-track {
-      background: transparent;
-    }
-    
-    #chatBox::-webkit-scrollbar-thumb {
-      background: #ccc;
-      border-radius: 4px;
-    }
-    
-    body.dark-mode #chatBox::-webkit-scrollbar-thumb {
-      background: #555;
-    }
+    #chatBox::-webkit-scrollbar { width: 8px; }
+    #chatBox::-webkit-scrollbar-track { background: transparent; }
+    #chatBox::-webkit-scrollbar-thumb { background: #ccc; border-radius: 4px; }
+    body.dark-mode #chatBox::-webkit-scrollbar-thumb { background: #555; }
   </style>
 </head>
 <body>
-  <!-- HEADER -->
   <div class="header">
     <button class="back-btn" onclick="goBack()">← Back</button>
     <div class="header-title">Chat Room</div>
@@ -253,10 +222,8 @@
     </div>
   </div>
 
-  <!-- CHAT BOX -->
   <div id="chatBox"></div>
 
-  <!-- MESSAGE INPUT -->
   <div id="messageInputBox">
     <input id="messageInput" type="text" placeholder="Type a message..." onkeypress="handleKeyPress(event)">
     <button id="sendBtn" onclick="sendMessage()">Send</button>
@@ -272,7 +239,9 @@
       getDatabase,
       ref,
       push,
+      remove,
       onChildAdded,
+      onChildRemoved,
       get,
       child,
       serverTimestamp
@@ -296,7 +265,6 @@
     let currentUser = null;
     let currentUsername = "User";
     
-    // Load appearance from database
     async function loadAppearance(userId) {
       if (!userId) return;
       try {
@@ -304,25 +272,18 @@
         if (snapshot.exists() && snapshot.val() === 'dark') {
           document.body.classList.add('dark-mode');
         }
-      } catch (error) {
-        console.log('No saved appearance:', error);
-      }
+      } catch (error) { console.log('Appearance error:', error); }
     }
     
-    window.goBack = () => {
-      window.location.href = 'index.html';
-    };
+    window.goBack = () => { window.location.href = 'index.html'; };
     
     window.handleKeyPress = (event) => {
-      if (event.key === 'Enter') {
-        sendMessage();
-      }
+      if (event.key === 'Enter') sendMessage();
     };
     
     window.sendMessage = () => {
       const input = document.getElementById("messageInput");
       const message = input.value.trim();
-      
       if (!message || !currentUser) return;
       
       push(ref(database, 'messages'), {
@@ -331,25 +292,34 @@
         userId: currentUser.uid,
         timestamp: serverTimestamp()
       });
-      
       input.value = "";
+    };
+
+    // New Delete Function
+    window.deleteMessage = (msgId) => {
+      if (confirm("Delete this message?")) {
+        const msgRef = ref(database, `messages/${msgId}`);
+        remove(msgRef).catch(err => console.error("Delete failed:", err));
+      }
     };
     
     function formatTime(timestamp) {
       if (!timestamp) return '';
       const date = new Date(timestamp);
-      const hours = date.getHours().toString().padStart(2, '0');
-      const minutes = date.getMinutes().toString().padStart(2, '0');
-      return `${hours}:${minutes}`;
+      return date.getHours().toString().padStart(2, '0') + ":" + 
+             date.getMinutes().toString().padStart(2, '0');
     }
     
     function loadMessages() {
       const chatBox = document.getElementById("chatBox");
       const messagesRef = ref(database, 'messages');
       
+      // Listen for new messages
       onChildAdded(messagesRef, (snapshot) => {
         const msg = snapshot.val();
+        const msgId = snapshot.key;
         const messageDiv = document.createElement("div");
+        messageDiv.id = `msg-${msgId}`; // Link DOM element to Firebase ID
         
         const isOwn = currentUser && msg.userId === currentUser.uid;
         messageDiv.className = `message ${isOwn ? 'own' : 'other'}`;
@@ -364,6 +334,17 @@
         const textSpan = document.createElement("div");
         textSpan.className = "message-text";
         textSpan.textContent = msg.text;
+
+        // Add delete button only if it's the current user's message
+        if (isOwn) {
+          const delSpan = document.createElement("span");
+          delSpan.className = "delete-btn";
+          delSpan.innerHTML = "&times;";
+          delSpan.title = "Delete Message";
+          delSpan.onclick = () => deleteMessage(msgId);
+          textSpan.appendChild(delSpan);
+        }
+        
         messageDiv.appendChild(textSpan);
         
         const timeSpan = document.createElement("div");
@@ -374,6 +355,12 @@
         chatBox.appendChild(messageDiv);
         chatBox.scrollTop = chatBox.scrollHeight;
       });
+
+      // Listen for deleted messages to remove them from screen instantly
+      onChildRemoved(messagesRef, (snapshot) => {
+        const elementToRemove = document.getElementById(`msg-${snapshot.key}`);
+        if (elementToRemove) elementToRemove.remove();
+      });
     }
     
     onAuthStateChanged(auth, async (user) => {
@@ -381,31 +368,19 @@
         window.location.href = 'index.html';
         return;
       }
-      
       currentUser = user;
-      
       try {
         const snapshot = await get(child(dbRef, `users/${user.uid}`));
-        if (snapshot.exists()) {
-          const userData = snapshot.val();
-          currentUsername = userData.username || user.email.split('@')[0];
-          document.getElementById("headerUsername").textContent = currentUsername;
-          document.getElementById("userAvatar").textContent = currentUsername.charAt(0).toUpperCase();
-          
-          // Load appearance
-          loadAppearance(user.uid);
-        } else {
-          currentUsername = user.email.split('@')[0];
-          document.getElementById("headerUsername").textContent = currentUsername;
-          document.getElementById("userAvatar").textContent = currentUsername.charAt(0).toUpperCase();
-        }
+        const userData = snapshot.exists() ? snapshot.val() : null;
+        currentUsername = (userData && userData.username) || user.email.split('@')[0];
         
-        loadMessages();
-      } catch (error) {
-        console.error('Error loading user data:', error);
-        currentUsername = user.email.split('@')[0];
         document.getElementById("headerUsername").textContent = currentUsername;
         document.getElementById("userAvatar").textContent = currentUsername.charAt(0).toUpperCase();
+        
+        loadAppearance(user.uid);
+        loadMessages();
+      } catch (error) {
+        console.error('Auth error:', error);
         loadMessages();
       }
     });
