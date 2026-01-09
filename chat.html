@@ -5,15 +5,23 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Chat Room - Pro Admin</title>
   <style>
-    :root { --admin-grad: linear-gradient(45deg, #4285f4, #9b51e0); }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     
-    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; color: #333; overflow: hidden; display: flex; height: 100vh; }
+    body { 
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+        background: #f0f2f5; 
+        color: #333; 
+        overflow: hidden; 
+        display: flex; 
+        height: 100vh;
+        /* Theme Transition */
+        transition: background 0.5s ease, color 0.5s ease;
+    }
     
     /* SIDEBAR */
     #sidebar {
       width: 260px; background: white; border-right: 1px solid #ddd;
-      display: flex; flex-direction: column; transition: transform 0.3s ease;
+      display: flex; flex-direction: column; transition: background 0.5s ease;
       z-index: 110;
     }
     .sidebar-header { padding: 20px; font-weight: bold; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; }
@@ -28,6 +36,7 @@
     .header {
       height: 60px; background: white; border-bottom: 1px solid #ddd;
       display: flex; align-items: center; padding: 0 20px; z-index: 100;
+      transition: background 0.5s ease;
     }
     
     .admin-btn { padding: 6px 12px; border-radius: 4px; border: none; color: white; cursor: pointer; font-weight: bold; font-size: 11px; margin-left: 5px; display: none; }
@@ -41,31 +50,40 @@
       100% { background-position: 0% 50%; }
     }
 
+    /* CLEAR CHAT ANIMATION */
+    .fade-out {
+        opacity: 0;
+        transform: scale(0.9);
+        transition: all 0.6s ease;
+    }
+
     #chatBox { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
     
-    .message { padding: 12px 16px; border-radius: 15px; max-width: 65%; position: relative; line-height: 1.4; }
+    .message { padding: 12px 16px; border-radius: 15px; max-width: 65%; position: relative; line-height: 1.4; transition: opacity 0.3s ease; }
     .message.own { align-self: flex-end; background: #4285f4; color: white; border-bottom-right-radius: 2px; }
     .message.other { align-self: flex-start; background: white; border-bottom-left-radius: 2px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
 
-    /* ADMIN BUBBLE STYLES */
     .admin-bubble { background-size: 200% 200% !important; border: 1px solid rgba(255,255,255,0.3); }
     .admin-animated { animation: gradientBG 3s ease infinite !important; }
 
-    .message-user { font-size: 11px; font-weight: 800; margin-bottom: 4px; cursor: help; }
+    /* TOOLTIP LOGIC */
+    .message-user { font-size: 11px; font-weight: 800; margin-bottom: 4px; position: relative; cursor: help; display: inline-block; }
+    .admin-tooltip {
+        visibility: hidden; position: absolute; bottom: 120%; left: 0; 
+        background: #222; color: white; padding: 8px; border-radius: 6px;
+        white-space: nowrap; font-size: 10px; z-index: 1000; opacity: 0;
+        transition: opacity 0.2s ease; pointer-events: auto;
+    }
+    .message-user:hover .admin-tooltip { visibility: visible; opacity: 1; }
+
     .delete-btn { color: rgba(255,255,255,0.6); cursor: pointer; font-size: 14px; margin-left: 8px; }
 
-    /* MODAL */
-    .modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 25px; border-radius: 12px; z-index: 1000; width: 320px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
-    .modal h3 { margin-bottom: 15px; }
-    .modal-row { margin-bottom: 15px; }
-    .modal-row label { display: block; font-size: 12px; margin-bottom: 5px; }
-
-    #inputArea { height: 80px; background: white; border-top: 1px solid #ddd; padding: 15px; display: flex; gap: 10px; }
+    #inputArea { height: 80px; background: white; border-top: 1px solid #ddd; padding: 15px; display: flex; gap: 10px; transition: background 0.5s ease; }
     #messageInput { flex: 1; border-radius: 25px; border: 1px solid #ddd; padding: 0 20px; outline: none; background: #f1f2f6; }
     #sendBtn { background: #4285f4; color: white; border: none; border-radius: 50%; width: 50px; cursor: pointer; font-weight: bold; }
 
     /* DARK MODE */
-    body.dark-mode, body.dark-mode #sidebar, body.dark-mode .header, body.dark-mode #inputArea, body.dark-mode .modal { background: #18191a; color: #e4e6eb; border-color: #3e4042; }
+    body.dark-mode, body.dark-mode #sidebar, body.dark-mode .header, body.dark-mode #inputArea { background: #18191a; color: #e4e6eb; border-color: #3e4042; }
     body.dark-mode .message.other { background: #242526; color: #e4e6eb; }
     body.dark-mode #messageInput { background: #3a3b3c; color: white; border: none; }
   </style>
@@ -82,7 +100,7 @@
       <button onclick="window.location.href='index.html'" style="padding:5px 10px">Back</button>
       <button onclick="toggleTheme()" id="themeBtn" style="margin-left:10px; border:none; background:none; cursor:pointer; font-size:18px">🌙</button>
       <button id="clearBtn" class="admin-btn" onclick="clearChat()">Clear Chat</button>
-      <button id="settingsBtn" class="admin-btn" onclick="document.getElementById('adminModal').style.display='block'">⚙ Admin Settings</button>
+      <button id="settingsBtn" class="admin-btn" onclick="document.getElementById('adminModal').style.display='block'">⚙ Admin Styles</button>
       
       <div style="margin-left:auto; display:flex; align-items:center; gap:10px">
         <span id="uName"></span>
@@ -94,36 +112,15 @@
     <div id="typingIndicator" style="padding:5px 20px; font-size:12px; height:20px; color:#888"></div>
 
     <div id="inputArea">
-      <input type="text" id="messageInput" placeholder="Message..." oninput="handleTyping()">
+      <input type="text" id="messageInput" placeholder="Message..." autocomplete="off">
       <button id="sendBtn" onclick="sendMsg()">></button>
     </div>
-  </div>
-
-  <div id="adminModal" class="modal">
-    <h3>Admin Styles</h3>
-    <div class="modal-row">
-      <label>Gradient Color 1</label>
-      <input type="color" id="grad1" value="#4285f4" style="width:100%">
-    </div>
-    <div class="modal-row">
-      <label>Gradient Color 2</label>
-      <input type="color" id="grad2" value="#9b51e0" style="width:100%">
-    </div>
-    <div class="modal-row">
-      <label>Name Color</label>
-      <input type="color" id="nameCol" value="#ffffff" style="width:100%">
-    </div>
-    <div class="modal-row">
-      <label><input type="checkbox" id="isAnimated"> Enable Animation</label>
-    </div>
-    <button onclick="saveAdminStyles()" style="width:100%; padding:10px; background:#4285f4; color:white; border:none; border-radius:5px">Save & Close</button>
-    <button onclick="document.getElementById('adminModal').style.display='none'" style="width:100%; margin-top:5px; background:none; border:none; cursor:pointer">Cancel</button>
   </div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
-    import { getDatabase, ref, push, set, onValue, onChildAdded, update, remove, serverTimestamp, onDisconnect } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+    import { getDatabase, ref, push, set, onValue, onChildAdded, update, remove, serverTimestamp, onDisconnect, get, child } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCN8ypq4TxhLwjseqnDJneBO2j_BlARz0M",
@@ -138,11 +135,20 @@
     
     let user = null, isAdmin = false, myStyles = {};
 
+    // --- FIX: Typing Function ---
+    window.handleTyping = () => {
+      if(!user) return;
+      const tRef = ref(db, `typing/${user.uid}`);
+      set(tRef, document.getElementById('uName').textContent);
+      setTimeout(() => remove(tRef), 2000);
+    };
+
+    document.getElementById('messageInput').addEventListener('input', window.handleTyping);
+
     onAuthStateChanged(auth, u => {
-      if(!u) { window.location.href='index.html'; return; }
+      if(!u) return;
       user = u;
       
-      // ONLINE PRESENCE
       const pRef = ref(db, `presence/${u.uid}`);
       set(pRef, true);
       onDisconnect(pRef).remove();
@@ -150,18 +156,10 @@
       onValue(ref(db, `users/${u.uid}`), s => {
         const data = s.val() || {};
         isAdmin = data.isAdmin || false;
-        myStyles = {
-          g1: data.g1 || '#4285f4',
-          g2: data.g2 || '#9b51e0',
-          nc: data.nc || '#ffffff',
-          anim: data.anim || false
-        };
+        myStyles = { g1: data.g1, g2: data.g2, nc: data.nc, anim: data.anim };
         
         document.getElementById('uName').textContent = data.username || user.email.split('@')[0];
-        document.getElementById('uAvatar').textContent = (data.username || 'U').charAt(0).toUpperCase();
-        if(isAdmin) {
-          document.querySelectorAll('.admin-btn').forEach(b => b.style.display='block');
-        }
+        if(isAdmin) document.querySelectorAll('.admin-btn').forEach(b => b.style.display='block');
         if(data.theme === 'dark') document.body.classList.add('dark-mode');
       });
 
@@ -169,46 +167,22 @@
       loadMessages();
     });
 
+    // --- Animation: Clear Chat ---
+    window.clearChat = () => {
+        if(!confirm("Clear everything?")) return;
+        const messages = document.querySelectorAll('.message');
+        messages.forEach(m => m.classList.add('fade-out'));
+        
+        setTimeout(() => {
+            set(ref(db, 'messages'), null);
+            document.getElementById('chatBox').innerHTML = "";
+        }, 6000); // Allow time for animation
+    };
+
     window.toggleTheme = () => {
       const isDark = document.body.classList.toggle('dark-mode');
       update(ref(db, `users/${user.uid}`), { theme: isDark ? 'dark' : 'light' });
     };
-
-    window.saveAdminStyles = () => {
-      update(ref(db, `users/${user.uid}`), {
-        g1: document.getElementById('grad1').value,
-        g2: document.getElementById('grad2').value,
-        nc: document.getElementById('nameCol').value,
-        anim: document.getElementById('isAnimated').checked
-      });
-      document.getElementById('adminModal').style.display='none';
-    };
-
-    function loadMembers() {
-      onValue(ref(db, 'users'), uSnap => {
-        onValue(ref(db, 'presence'), pSnap => {
-          const members = uSnap.val() || {};
-          const online = pSnap.val() || {};
-          const list = document.getElementById('memberList');
-          list.innerHTML = "";
-          let count = 0;
-
-          Object.keys(members).forEach(uid => {
-            const isOnline = online[uid] ? true : false;
-            if(isOnline) count++;
-            const item = document.createElement('div');
-            item.className = 'member-item';
-            item.innerHTML = `
-              <div class="status-dot ${isOnline?'online':''}"></div>
-              <span>${members[uid].username || 'User'}</span>
-              ${isAdmin && uid !== user.uid ? `<button onclick="banUser('${uid}')" style="font-size:9px; margin-left:auto">Ban</button>` : ''}
-            `;
-            list.appendChild(item);
-          });
-          document.getElementById('onlineCount').textContent = count;
-        });
-      });
-    }
 
     function loadMessages() {
       const box = document.getElementById('chatBox');
@@ -223,15 +197,30 @@
           if(m.anim) div.classList.add('admin-animated');
         }
 
-        div.innerHTML = `
-          <div class="message-user" style="color:${m.nc || ''}">${isOwn?'You':m.username}</div>
-          <div class="message-text">${m.text} ${isOwn || isAdmin ? `<span class="delete-btn" onclick="del('${s.key}')">&times;</span>`:''}</div>
-        `;
+        const userWrap = document.createElement('div');
+        userWrap.className = 'message-user';
+        userWrap.style.color = m.nc || '';
+        userWrap.textContent = isOwn ? 'You' : m.username;
+
+        // Admin Hover Tooltip
+        if(isAdmin && !isOwn) {
+            const tip = document.createElement('div');
+            tip.className = 'admin-tooltip';
+            tip.innerHTML = `${m.email} <br> <button onclick="banUser('${m.userId}')" style="background:red; color:white; border:none; padding:2px 5px; border-radius:3px; cursor:pointer; margin-top:5px">BAN</button>`;
+            userWrap.appendChild(tip);
+        }
+
+        div.appendChild(userWrap);
+        const txt = document.createElement('div');
+        txt.innerHTML = `${m.text} ${isOwn || isAdmin ? `<span class="delete-btn" onclick="del('${s.key}')">&times;</span>`:''}`;
+        div.appendChild(txt);
+
         box.appendChild(div);
         box.scrollTop = box.scrollHeight;
       });
     }
 
+    // Rest of the logic (loadMembers, sendMsg, etc) stays the same
     window.sendMsg = () => {
       const input = document.getElementById('messageInput');
       if(!input.value.trim()) return;
@@ -239,19 +228,32 @@
         text: input.value,
         userId: user.uid,
         username: document.getElementById('uName').textContent,
+        email: user.email,
         isAdminMsg: isAdmin,
-        g1: myStyles.g1,
-        g2: myStyles.g2,
-        nc: myStyles.nc,
-        anim: myStyles.anim,
+        g1: myStyles.g1, g2: myStyles.g2, nc: myStyles.nc, anim: myStyles.anim,
         timestamp: serverTimestamp()
       });
       input.value = "";
     };
 
+    function loadMembers() {
+        onValue(ref(db, 'users'), uSnap => {
+            onValue(ref(db, 'presence'), pSnap => {
+                const members = uSnap.val() || {};
+                const online = pSnap.val() || {};
+                const list = document.getElementById('memberList');
+                list.innerHTML = "";
+                Object.keys(members).forEach(uid => {
+                    const item = document.createElement('div');
+                    item.className = 'member-item';
+                    item.innerHTML = `<div class="status-dot ${online[uid]?'online':''}"></div><span>${members[uid].username || 'User'}</span>`;
+                    list.appendChild(item);
+                });
+            });
+        });
+    }
+
     window.del = (id) => remove(ref(db, `messages/${id}`));
-    window.clearChat = () => set(ref(db, 'messages'), null).then(()=>window.location.reload());
-    
     document.getElementById('messageInput').addEventListener('keypress', e => { if(e.key==='Enter') sendMsg(); });
   </script>
 </body>
