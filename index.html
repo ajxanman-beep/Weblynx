@@ -40,6 +40,10 @@
       height: 3px;
       background: #333;
       border-radius: 2px;
+      transition: background 0.3s;
+    }
+    body.dark-mode .hamburger span {
+      background: white;
     }
     .user-info {
       margin-left: auto;
@@ -295,6 +299,21 @@
       background: #2c2c2c;
       color: white;
     }
+    body.dark-mode .sidebar {
+      background: #2c2c2c;
+    }
+    body.dark-mode .nav-item:hover {
+      background: #3a3a3a;
+    }
+    body.dark-mode .nav-item {
+      color: white;
+    }
+    body.dark-mode .sidebar-header {
+      background: #1a1a1a;
+    }
+    body.dark-mode .sidebar-footer {
+      border-top-color: #444;
+    }
     body.dark-mode input {
       background: #444;
       color: white;
@@ -442,6 +461,21 @@
     let emailRevealed = false;
     let currentUser = null;
     
+    // Load saved appearance on page load
+    async function loadAppearance() {
+      try {
+        const result = await window.storage.get('appearance');
+        if (result && result.value) {
+          setAppearance(result.value);
+        }
+      } catch (error) {
+        // No saved preference, use default (light)
+        console.log('No saved appearance preference');
+      }
+    }
+    
+    loadAppearance();
+    
     window.toggleSidebar = () => {
       sidebar.classList.toggle("open");
       overlay.classList.toggle("active");
@@ -489,7 +523,7 @@
       alert("Change password feature (coming soon)");
     };
     
-    window.setAppearance = (mode) => {
+    window.setAppearance = async (mode) => {
       const lightBtn = document.getElementById("lightMode");
       const darkBtn = document.getElementById("darkMode");
       
@@ -501,6 +535,13 @@
         document.body.classList.remove('dark-mode');
         lightBtn.classList.add('active');
         darkBtn.classList.remove('active');
+      }
+      
+      // Save appearance preference
+      try {
+        await window.storage.set('appearance', mode);
+      } catch (error) {
+        console.error('Failed to save appearance:', error);
       }
     };
     
