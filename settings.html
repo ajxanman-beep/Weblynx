@@ -1,33 +1,26 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Settings</title>
+
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-    body {
-      font-family: Arial, sans-serif;
-      background: #f5f5f5;
-      min-height: 100vh;
-    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: Arial, sans-serif; background: #f5f5f5; min-height: 100vh; }
+
     .header {
       position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 60px;
+      top: 0; left: 0;
+      width: 100%; height: 60px;
       background: white;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      box-shadow: 0 2px 5px rgba(0,0,0,.1);
       display: flex;
       align-items: center;
       padding: 0 20px;
       z-index: 100;
     }
+
     .back-btn {
       padding: 8px 16px;
       background: #4285f4;
@@ -35,20 +28,17 @@
       border: none;
       border-radius: 4px;
       cursor: pointer;
-      font-size: 14px;
     }
-    .back-btn:hover {
-      background: #357ae8;
-    }
+
     .user-info {
       margin-left: auto;
       display: flex;
       align-items: center;
       gap: 10px;
     }
+
     .avatar {
-      width: 35px;
-      height: 35px;
+      width: 35px; height: 35px;
       border-radius: 50%;
       background: #4285f4;
       display: flex;
@@ -57,27 +47,30 @@
       color: white;
       font-weight: bold;
     }
+
     .settings-page {
       max-width: 700px;
       margin: 80px auto 40px;
       padding: 20px;
     }
+
+    .settings-title {
+      font-size: 32px;
+      text-align: center;
+      background: #2c2c2c;
+      color: white;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+
     .settings-section {
       background: #2c2c2c;
       border-radius: 8px;
       padding: 20px;
       margin-bottom: 20px;
     }
-    .settings-title {
-      font-size: 32px;
-      font-weight: bold;
-      text-align: center;
-      padding: 20px;
-      background: #2c2c2c;
-      color: white;
-      border-radius: 8px;
-      margin-bottom: 20px;
-    }
+
     .settings-item {
       display: flex;
       justify-content: space-between;
@@ -86,24 +79,19 @@
       border-bottom: 1px solid #444;
       gap: 50px;
     }
-    .settings-item:last-child {
-      border-bottom: none;
-    }
-    .settings-label {
-      color: #aaa;
-      font-size: 14px;
-      margin-bottom: 5px;
-    }
-    .settings-value {
-      color: white;
-      font-size: 16px;
-    }
+
+    .settings-item:last-child { border-bottom: none; }
+
+    .settings-label { color: #aaa; font-size: 14px; }
+    .settings-value { color: white; font-size: 16px; }
+
     .reveal-link {
       color: #4285f4;
       cursor: pointer;
       margin-left: 10px;
       font-size: 14px;
     }
+
     .edit-btn {
       background: #444;
       color: white;
@@ -111,87 +99,34 @@
       border-radius: 4px;
       border: none;
       cursor: pointer;
-      font-size: 14px;
     }
-    .edit-btn:hover {
-      background: #555;
-    }
-    .section-title {
-      color: white;
-      font-size: 18px;
-      margin-bottom: 15px;
-    }
-    .change-password-btn {
-      background: #4285f4;
-      color: white;
-      padding: 12px 24px;
-      border-radius: 4px;
-      border: none;
-      cursor: pointer;
-      font-size: 14px;
-    }
-    .change-password-btn:hover {
-      background: #357ae8;
-    }
+
     .appearance-toggle {
       display: flex;
       gap: 10px;
     }
+
     .toggle-option {
       flex: 1;
       padding: 10px;
       background: #444;
       color: white;
-      border: 2px solid #444;
       border-radius: 4px;
       cursor: pointer;
       text-align: center;
     }
+
     .toggle-option.active {
-      border-color: #4285f4;
       background: #357ae8;
+      border: 2px solid #4285f4;
     }
-    body.dark-mode {
-      background: #1a1a1a;
-    }
-    body.dark-mode .header {
-      background: #2c2c2c;
-      color: white;
-    }
-    body.dark-mode .settings-section {
-      background: #2c2c2c;
-    }
-    body.dark-mode .settings-title {
-      background: #2c2c2c;
-    }
-    body.dark-mode .settings-item {
-      border-bottom-color: #444;
-    }
-    body.dark-mode .section-title,
-    body.dark-mode .settings-label,
-    body.dark-mode .settings-value {
-      color: #ddd;
-    }
-    body.dark-mode .edit-btn {
-      background: #444;
-      color: white;
-    }
-    body.dark-mode .edit-btn:hover {
-      background: #555;
-    }
-    body.dark-mode .toggle-option {
-      background: #444;
-      color: white;
-      border-color: #444;
-    }
-    body.dark-mode .toggle-option.active {
-      border-color: #4285f4;
-      background: #357ae8;
-    }
+
+    body.dark-mode { background: #1a1a1a; }
   </style>
 </head>
+
 <body>
-  <!-- Header -->
+
   <div class="header">
     <button class="back-btn" onclick="goBack()">← Back</button>
     <div class="user-info">
@@ -200,14 +135,14 @@
     </div>
   </div>
 
-  <!-- Settings Content -->
   <div class="settings-page">
     <div class="settings-title">Settings</div>
-    
+
     <div class="settings-section">
+      <!-- EMAIL -->
       <div class="settings-item">
         <div>
-          <div class="settings-label">Email:</div>
+          <div class="settings-label">Email</div>
           <div class="settings-value">
             <span id="emailDisplay">********@gmail.com</span>
             <span class="reveal-link" onclick="toggleEmailReveal()">Reveal</span>
@@ -215,50 +150,56 @@
         </div>
         <button class="edit-btn" onclick="editEmail()">Edit</button>
       </div>
-      
+
+      <!-- USERNAME -->
       <div class="settings-item">
         <div>
-          <div class="settings-label">Username:</div>
-          <div class="settings-value" id="usernameDisplay">retrick_aj</div>
+          <div class="settings-label">Username</div>
+          <div class="settings-value" id="usernameDisplay">username</div>
         </div>
         <button class="edit-btn" onclick="editUsername()">Edit</button>
+      </div>
+
+      <!-- PASSWORD -->
+      <div class="settings-item">
+        <div>
+          <div class="settings-label">Password</div>
+          <div class="settings-value">
+            <span id="passwordDisplay">••••••••</span>
+            <span class="reveal-link" onclick="revealPassword()">Reveal</span>
+          </div>
+        </div>
+        <button class="edit-btn" onclick="changePassword()">Change</button>
       </div>
     </div>
 
     <div class="settings-section">
-      <div class="section-title">Password and Authentication</div>
-      <button class="change-password-btn" onclick="changePassword()">Change Password</button>
-    </div>
-
-    <div class="settings-section">
-      <div class="section-title">Appearance</div>
+      <div class="settings-label">Appearance</div>
       <div class="appearance-toggle">
-        <div class="toggle-option active" id="lightMode" onclick="setAppearance('light')">
-          ☀️ Light Mode
-        </div>
-        <div class="toggle-option" id="darkMode" onclick="setAppearance('dark')">
-          🌙 Dark Mode
-        </div>
+        <div class="toggle-option active" id="lightMode" onclick="setAppearance('light')">☀️ Light</div>
+        <div class="toggle-option" id="darkMode" onclick="setAppearance('dark')">🌙 Dark</div>
       </div>
     </div>
   </div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-    import { updateEmail } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
     import {
       getAuth,
-      onAuthStateChanged
+      onAuthStateChanged,
+      updateEmail,
+      EmailAuthProvider,
+      reauthenticateWithCredential,
+      updatePassword
     } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
     import {
       getDatabase,
       ref,
-      set,
       get,
-      child,
-      update
+      update,
+      child
     } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
-    
+
     const firebaseConfig = {
       apiKey: "AIzaSyCN8ypq4TxhLwjseqnDJneBO2j_BlARz0M",
       authDomain: "chat-or-somethig.firebaseapp.com",
@@ -266,138 +207,104 @@
       projectId: "chat-or-somethig",
       storageBucket: "chat-or-somethig.firebasestorage.app",
       messagingSenderId: "598777875087",
-      appId: "1:598777875087:web:d100536dd269bc0a9d7efa",
-      measurementId: "G-VQQ0TYRNNH"
+      appId: "1:598777875087:web:d100536dd269bc0a9d7efa"
     };
-    
+
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const database = getDatabase(app);
     const dbRef = ref(database);
-    
-    let emailRevealed = false;
+
     let currentUser = null;
     let storedEmail = "";
-    
-    // Load saved appearance on page load
-    async function loadAppearance(userId) {
-      if (!userId) return;
-      try {
-        const snapshot = await get(child(dbRef, `users/${userId}/appearance`));
-        if (snapshot.exists()) {
-          setAppearance(snapshot.val(), false);
-        }
-      } catch (error) {
-        console.log('No saved appearance preference:', error);
-      }
-    }
-    
-    window.goBack = () => {
-      window.location.href = 'index.html';
-    };
-    
-    window.toggleEmailReveal = () => {
-      emailRevealed = !emailRevealed;
-      const emailDisplay = document.getElementById("emailDisplay");
-      if (emailRevealed) {
-        emailDisplay.textContent = storedEmail || (currentUser ? currentUser.email : "********@gmail.com");
-      } else {
-        emailDisplay.textContent = "********@gmail.com";
-      }
-    };
-    
-    window.editEmail = async () => {
-      const newEmail = prompt("Enter new email:", currentUser.email);
-      if (!newEmail || newEmail === currentUser.email) return;
+    let emailRevealed = false;
 
+    function goBack() {
+      window.location.href = "index.html";
+    }
+
+    async function reauthenticateUser(password) {
+      const credential = EmailAuthProvider.credential(currentUser.email, password);
+      await reauthenticateWithCredential(currentUser, credential);
+    }
+
+    window.revealPassword = async () => {
+      const pw = prompt("Enter your current password:");
+      if (!pw) return;
+      try {
+        await reauthenticateUser(pw);
+        alert("Password confirmed ✔️");
+        document.getElementById("passwordDisplay").textContent = "********";
+      } catch {
+        alert("Incorrect password ❌");
+        document.getElementById("passwordDisplay").textContent = "••••••••";
+      }
+    };
+
+    window.changePassword = async () => {
+      const currentPw = prompt("Current password:");
+      if (!currentPw) return;
+
+      const newPw = prompt("New password (min 6 chars):");
+      if (!newPw || newPw.length < 6) return alert("Password too short");
+
+      try {
+        await reauthenticateUser(currentPw);
+        await updatePassword(currentUser, newPw);
+        alert("Password updated ✅");
+      } catch (e) {
+        alert(e.message);
+      }
+    };
+
+    window.editEmail = async () => {
+      const newEmail = prompt("New email:", currentUser.email);
+      if (!newEmail) return;
       try {
         await updateEmail(currentUser, newEmail);
-        await update(ref(database, `users/${currentUser.uid}`), {
-          email: newEmail
-        });
-
-        alert("Email updated!");
+        await update(ref(database, `users/${currentUser.uid}`), { email: newEmail });
+        alert("Email updated");
         location.reload();
-      } catch (error) {
-        alert("Re-authentication required. Please log in again.");
+      } catch {
+        alert("Re-login required");
       }
     };
 
-    
     window.editUsername = async () => {
-      const currentUsername = document.getElementById("usernameDisplay").textContent;
-      const newUsername = prompt("Enter new username:", currentUsername);
-      if (newUsername && newUsername !== currentUsername) {
-        try {
-          await update(ref(database, `users/${currentUser.uid}`), {
-            username: newUsername
-          });
-          alert("Username updated successfully!");
-          location.reload();
-        } catch (error) {
-          alert("Failed to update username: " + error.message);
-        }
-      }
+      const newName = prompt("New username:");
+      if (!newName) return;
+      await update(ref(database, `users/${currentUser.uid}`), { username: newName });
+      location.reload();
     };
-    
-    window.changePassword = () => {
-      alert("Change password feature (coming soon)");
-    };
-    
-    window.setAppearance = async (mode, shouldSave = true) => {
-      const lightBtn = document.getElementById("lightMode");
-      const darkBtn = document.getElementById("darkMode");
-      
-      if (mode === 'dark') {
-        document.body.classList.add('dark-mode');
-        lightBtn.classList.remove('active');
-        darkBtn.classList.add('active');
-      } else {
-        document.body.classList.remove('dark-mode');
-        lightBtn.classList.add('active');
-        darkBtn.classList.remove('active');
-      }
-      
-      if (shouldSave && currentUser) {
-        try {
-          await update(ref(database, `users/${currentUser.uid}`), {
-            appearance: mode
-          });
-          console.log('Appearance saved:', mode);
-        } catch (error) {
-          console.error('Failed to save appearance:', error);
-        }
-      }
-    };
-    
-    onAuthStateChanged(auth, async user => {
-      if (!user) {
-        window.location.href = 'index.html';
-        return;
-      }
 
+    window.toggleEmailReveal = () => {
+      emailRevealed = !emailRevealed;
+      document.getElementById("emailDisplay").textContent =
+        emailRevealed ? storedEmail : "********@gmail.com";
+    };
+
+    window.setAppearance = async (mode) => {
+      document.body.classList.toggle("dark-mode", mode === "dark");
+      document.getElementById("lightMode").classList.toggle("active", mode === "light");
+      document.getElementById("darkMode").classList.toggle("active", mode === "dark");
+
+      await update(ref(database, `users/${currentUser.uid}`), { appearance: mode });
+    };
+
+    onAuthStateChanged(auth, async user => {
+      if (!user) return window.location.href = "index.html";
       currentUser = user;
 
-      try {
-        const snapshot = await get(child(dbRef, `users/${user.uid}`));
-        if (snapshot.exists()) {
-          const data = snapshot.val();
+      const snap = await get(child(dbRef, `users/${user.uid}`));
+      const data = snap.val();
 
-          document.getElementById("headerUsername").textContent = data.username;
-          document.getElementById("userAvatar").textContent = data.username.charAt(0).toUpperCase();
-          document.getElementById("usernameDisplay").textContent = data.username;
-          storedEmail = data.email;
+      storedEmail = data.email || user.email;
+      document.getElementById("headerUsername").textContent = data.username;
+      document.getElementById("usernameDisplay").textContent = data.username;
+      document.getElementById("userAvatar").textContent = data.username[0].toUpperCase();
 
-          document.getElementById("emailDisplay").textContent =
-          emailRevealed ? data.email : "********@gmail.com";
-
-         await loadAppearance(user.uid);
-       }
-      } catch (err) {
-        console.error(err);
-      }
+      if (data.appearance === "dark") setAppearance("dark");
     });
-
   </script>
 </body>
 </html>
