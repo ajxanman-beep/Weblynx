@@ -3,125 +3,145 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Realtime Chat</title>
+<title>Chat Room</title>
+
 <style>
+  :root {
+    --bg: #121212;
+    --card: #1f1f1f;
+    --text: #ffffff;
+    --input: #2a2a2a;
+    --accent: #4285f4;
+  }
+
+  body.light {
+    --bg: #f5f5f5;
+    --card: #ffffff;
+    --text: #000000;
+    --input: #eaeaea;
+    --accent: #4285f4;
+  }
+
+  * {
+    transition: background 0.35s ease, color 0.35s ease, border-color 0.35s ease;
+  }
+
   body {
-    font-family: Arial, sans-serif;
     margin: 0;
-    background: #f5f5f5;
-    display: flex;
-    flex-direction: column;
+    background: var(--bg);
+    font-family: Arial, sans-serif;
+    color: var(--text);
+    overflow: hidden;
+  }
+
+  #loginScreen, #chatScreen {
+    width: 100vw;
     height: 100vh;
-    transition: background 0.3s ease, color 0.3s ease;
+    display: none;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
   }
-  body.dark-mode {
-    background: #1a1a1a;
-    color: #ddd;
+
+  .card {
+    background: var(--card);
+    padding: 20px;
+    border-radius: 12px;
+    width: 320px;
+    box-shadow: 0 0 12px rgba(0,0,0,0.4);
   }
-  header {
-    background: #4285f4;
-    color: white;
-    padding: 15px;
-    text-align: center;
-    font-size: 20px;
-    font-weight: bold;
-    transition: background 0.3s ease;
-  }
-  #chat {
-    flex: 1;
-    overflow-y: auto;
+
+  input, button {
+    width: 100%;
     padding: 10px;
+    margin-top: 8px;
+    border-radius: 6px;
+    border: none;
+    outline: none;
+    background: var(--input);
+    color: var(--text);
   }
-  .message {
-    background: white;
-    margin: 5px 0;
-    padding: 8px 12px;
-    border-radius: 8px;
-    display: flex;
-    justify-content: space-between;
-    transition: background 0.3s ease, color 0.3s ease;
-  }
-  body.dark-mode .message {
-    background: #2c2c2c;
+
+  button {
+    background: var(--accent);
     color: white;
-  }
-  .message .info {
-    font-size: 12px;
-    color: #555;
-  }
-  body.dark-mode .message .info {
-    color: #bbb;
-  }
-  .message .delete-btn {
     cursor: pointer;
-    color: #ea4335;
-    margin-left: 10px;
-    font-weight: bold;
   }
-  #inputBox {
-    display: flex;
-    border-top: 1px solid #ddd;
+
+  #chatBox {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 60px;
     padding: 10px;
-    background: #fff;
-    transition: background 0.3s ease;
+    overflow-y: auto;
   }
-  body.dark-mode #inputBox {
-    background: #2c2c2c;
+
+  .msg {
+    background: var(--card);
+    margin-bottom: 6px;
+    padding: 8px;
+    border-radius: 6px;
+    font-size: 14px;
   }
+
+  .time {
+    font-size: 11px;
+    opacity: 0.6;
+  }
+
+  #messageInputBox {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    padding: 10px;
+    background: var(--card);
+    display: flex;
+    gap: 10px;
+  }
+
   #messageInput {
     flex: 1;
-    padding: 10px;
-    border: 1px solid #ddd;
-    border-radius: 6px;
-    margin-right: 10px;
-    transition: background 0.3s ease, color 0.3s ease, border-color 0.3s ease;
-  }
-  body.dark-mode #messageInput {
-    background: #444;
-    color: white;
-    border-color: #555;
-  }
-  #sendBtn {
-    padding: 10px 15px;
-    background: #4285f4;
-    color: white;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: background 0.3s ease;
-  }
-  #sendBtn:hover {
-    background: #357ae8;
   }
 </style>
 </head>
 <body>
 
-<header>Realtime Chat</header>
-
-<div id="chat"></div>
-
-<div id="inputBox">
-  <input type="text" id="messageInput" placeholder="Type a message...">
-  <button id="sendBtn">Send</button>
+<!-- LOGIN SCREEN -->
+<div id="loginScreen">
+  <div class="card">
+    <h2>Login Required</h2>
+    <p>Please log in from the main site.</p>
+  </div>
 </div>
 
+<!-- CHAT SCREEN -->
+<div id="chatScreen">
+  <div id="chatBox"></div>
+  <div id="messageInputBox">
+    <input id="messageInput" type="text" placeholder="Type message...">
+    <button onclick="sendMessage()">Send</button>
+  </div>
+</div>
+
+<!-- FIREBASE (v9 modular) -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+import {
+  getAuth,
+  onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 import {
   getDatabase,
   ref,
   push,
   onChildAdded,
-  onChildRemoved,
-  remove
+  off
 } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
-import {
-  getAuth,
-  onAuthStateChanged
-} from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 
-// Firebase config
+/* 🔥 YOUR ORIGINAL PROJECT */
 const firebaseConfig = {
   apiKey: "AIzaSyCN8ypq4TxhLwjseqnDJneBO2j_BlARz0M",
   authDomain: "chat-or-somethig.firebaseapp.com",
@@ -133,86 +153,76 @@ const firebaseConfig = {
   measurementId: "G-VQQ0TYRNNH"
 };
 
-// Initialize Firebase
 const app = initializeApp(firebaseConfig);
-const database = getDatabase(app);
 const auth = getAuth(app);
+const db = getDatabase(app);
 
-const chatBox = document.getElementById("chat");
+const loginScreen = document.getElementById("loginScreen");
+const chatScreen = document.getElementById("chatScreen");
+const chatBox = document.getElementById("chatBox");
 const messageInput = document.getElementById("messageInput");
-const sendBtn = document.getElementById("sendBtn");
 
-let currentUser = null;
+/* 🌗 AUTO SYSTEM THEME */
+function syncTheme() {
+  document.body.classList.toggle(
+    "light",
+    window.matchMedia("(prefers-color-scheme: light)").matches
+  );
+}
+syncTheme();
+window.matchMedia("(prefers-color-scheme: light)")
+  .addEventListener("change", syncTheme);
 
-// Get current logged in user
-onAuthStateChanged(auth, (user) => {
-  if (user) {
-    currentUser = user;
-  } else {
-    alert("Please login first.");
-    window.location.href = "index.html"; // redirect to login
+/* 🔒 AUTH GATE */
+onAuthStateChanged(auth, user => {
+  if (!user) {
+    loginScreen.style.display = "flex";
+    chatScreen.style.display = "none";
+    return;
   }
+
+  loginScreen.style.display = "none";
+  chatScreen.style.display = "flex";
+  loadMessages(user);
 });
 
-// Send message
-sendBtn.onclick = () => {
+/* ✉ SEND MESSAGE */
+window.sendMessage = () => {
+  const user = auth.currentUser;
   const text = messageInput.value.trim();
-  if (!text || !currentUser) return;
+  if (!user || !text) return;
 
-  const username = currentUser.email.split("@")[0];
-  const timestamp = new Date().toISOString();
+  const username = user.email.split("@")[0];
 
-  push(ref(database, "messages"), {
-    username: username,
-    text: text,
-    uid: currentUser.uid,
-    timestamp: timestamp
+  push(ref(db, "messages"), {
+    text,
+    user: username,
+    uid: user.uid,
+    time: Date.now()
   });
 
   messageInput.value = "";
 };
 
-// Listen for new messages
-const messagesRef = ref(database, "messages");
-onChildAdded(messagesRef, (snapshot) => {
-  const data = snapshot.val();
-  const id = snapshot.key;
-  displayMessage(id, data);
-});
+/* 📡 LOAD MESSAGES */
+function loadMessages(user) {
+  chatBox.innerHTML = "";
+  off(ref(db, "messages"));
 
-// Listen for deleted messages
-onChildRemoved(messagesRef, (snapshot) => {
-  const id = snapshot.key;
-  const el = document.getElementById(id);
-  if (el) el.remove();
-});
+  onChildAdded(ref(db, "messages"), snap => {
+    const m = snap.val();
 
-// Display a message
-function displayMessage(id, data) {
-  const msgDiv = document.createElement("div");
-  msgDiv.classList.add("message");
-  msgDiv.id = id;
+    const div = document.createElement("div");
+    div.className = "msg";
+    div.innerHTML = `
+      <b>${m.user}</b>
+      <div>${m.text}</div>
+      <div class="time">${new Date(m.time).toLocaleTimeString()}</div>
+    `;
 
-  const time = new Date(data.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-  msgDiv.innerHTML = `
-    <div>
-      <strong>${data.username}</strong> <span class="info">${time}</span>
-      <div>${data.text}</div>
-    </div>
-  `;
-
-  // Add delete button if it's your message
-  if (currentUser && data.uid === currentUser.uid) {
-    const delBtn = document.createElement("span");
-    delBtn.classList.add("delete-btn");
-    delBtn.textContent = "×";
-    delBtn.onclick = () => remove(ref(database, `messages/${id}`));
-    msgDiv.appendChild(delBtn);
-  }
-
-  chatBox.appendChild(msgDiv);
-  chatBox.scrollTop = chatBox.scrollHeight;
+    chatBox.appendChild(div);
+    chatBox.scrollTop = chatBox.scrollHeight;
+  });
 }
 </script>
 
