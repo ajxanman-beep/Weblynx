@@ -245,6 +245,7 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+    import { updateEmail } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
     import {
       getAuth,
       onAuthStateChanged
@@ -306,20 +307,22 @@
     };
     
     window.editEmail = async () => {
-      const newEmail = prompt("Enter new email:", storedEmail || currentUser.email);
-      if (newEmail && newEmail !== storedEmail) {
-        try {
-          await update(ref(database, `users/${currentUser.uid}`), {
-            email: newEmail
-          });
-          storedEmail = newEmail;
-          alert("Email updated successfully!");
-          location.reload();
-        } catch (error) {
-          alert("Failed to update email: " + error.message);
-        }
+      const newEmail = prompt("Enter new email:", currentUser.email);
+      if (!newEmail || newEmail === currentUser.email) return;
+
+      try {
+        await updateEmail(currentUser, newEmail);
+        await update(ref(database, `users/${currentUser.uid}`), {
+          email: newEmail
+        });
+
+        alert("Email updated!");
+        location.reload();
+      } catch (error) {
+        alert("Re-authentication required. Please log in again.");
       }
     };
+
     
     window.editUsername = async () => {
       const currentUsername = document.getElementById("usernameDisplay").textContent;
