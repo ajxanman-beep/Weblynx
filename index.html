@@ -194,6 +194,115 @@
     .main-content {
       padding: 40px 20px;
     }
+    .settings-page {
+      max-width: 700px;
+      margin: 0 auto;
+    }
+    .settings-section {
+      background: #2c2c2c;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    .settings-title {
+      font-size: 32px;
+      font-weight: bold;
+      text-align: center;
+      padding: 20px;
+      background: #2c2c2c;
+      color: white;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+    .settings-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px 0;
+      border-bottom: 1px solid #444;
+    }
+    .settings-item:last-child {
+      border-bottom: none;
+    }
+    .settings-label {
+      color: #aaa;
+      font-size: 14px;
+      margin-bottom: 5px;
+    }
+    .settings-value {
+      color: white;
+      font-size: 16px;
+    }
+    .reveal-link {
+      color: #4285f4;
+      cursor: pointer;
+      margin-left: 10px;
+      font-size: 14px;
+    }
+    .edit-btn {
+      background: #444;
+      color: white;
+      padding: 8px 20px;
+      border-radius: 4px;
+      border: none;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .edit-btn:hover {
+      background: #555;
+    }
+    .section-title {
+      color: white;
+      font-size: 18px;
+      margin-bottom: 15px;
+    }
+    .change-password-btn {
+      background: #4285f4;
+      color: white;
+      padding: 12px 24px;
+      border-radius: 4px;
+      border: none;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .change-password-btn:hover {
+      background: #357ae8;
+    }
+    .appearance-toggle {
+      display: flex;
+      gap: 10px;
+    }
+    .toggle-option {
+      flex: 1;
+      padding: 10px;
+      background: #444;
+      color: white;
+      border: 2px solid #444;
+      border-radius: 4px;
+      cursor: pointer;
+      text-align: center;
+    }
+    .toggle-option.active {
+      border-color: #4285f4;
+      background: #357ae8;
+    }
+    body.dark-mode {
+      background: #1a1a1a;
+    }
+    body.dark-mode .auth-box,
+    body.dark-mode .header {
+      background: #2c2c2c;
+      color: white;
+    }
+    body.dark-mode input {
+      background: #444;
+      color: white;
+      border-color: #555;
+    }
+    body.dark-mode #status {
+      background: #444;
+      color: white;
+    }
   </style>
 </head>
 <body>
@@ -249,6 +358,50 @@
         </div>
       </div>
     </div>
+
+    <div id="settingsPage" style="display: none;">
+      <div class="settings-page">
+        <div class="settings-title">Settings</div>
+        
+        <div class="settings-section">
+          <div class="settings-item">
+            <div>
+              <div class="settings-label">Email:</div>
+              <div class="settings-value">
+                <span id="emailDisplay">********@gmail.com</span>
+                <span class="reveal-link" onclick="toggleEmailReveal()">Reveal</span>
+              </div>
+            </div>
+            <button class="edit-btn" onclick="editEmail()">Edit</button>
+          </div>
+          
+          <div class="settings-item">
+            <div>
+              <div class="settings-label">Username:</div>
+              <div class="settings-value" id="usernameDisplay">retrick_aj</div>
+            </div>
+            <button class="edit-btn" onclick="editUsername()">Edit</button>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <div class="section-title">Password and Authentication</div>
+          <button class="change-password-btn" onclick="changePassword()">Change Password</button>
+        </div>
+
+        <div class="settings-section">
+          <div class="section-title">Appearance</div>
+          <div class="appearance-toggle">
+            <div class="toggle-option active" id="lightMode" onclick="setAppearance('light')">
+              ☀️ Light Mode
+            </div>
+            <div class="toggle-option" id="darkMode" onclick="setAppearance('dark')">
+              🌙 Dark Mode
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <script type="module">
@@ -283,6 +436,10 @@
     const header = document.getElementById("header");
     const sidebar = document.getElementById("sidebar");
     const overlay = document.getElementById("overlay");
+    const settingsPage = document.getElementById("settingsPage");
+    
+    let emailRevealed = false;
+    let currentUser = null;
     
     window.toggleSidebar = () => {
       sidebar.classList.toggle("open");
@@ -290,13 +447,60 @@
     };
     
     window.navigateTo = (page) => {
+      content.style.display = "block";
+      settingsPage.style.display = "none";
       alert(`Navigating to ${page.charAt(0).toUpperCase() + page.slice(1)}`);
       toggleSidebar();
     };
     
     window.openSettings = () => {
-      alert("Settings page (coming soon)");
+      content.style.display = "none";
+      settingsPage.style.display = "block";
+      
+      if (currentUser) {
+        const username = currentUser.email.split('@')[0];
+        document.getElementById("usernameDisplay").textContent = username;
+        document.getElementById("emailDisplay").textContent = emailRevealed ? currentUser.email : "********@gmail.com";
+      }
+      
       toggleSidebar();
+    };
+    
+    window.toggleEmailReveal = () => {
+      emailRevealed = !emailRevealed;
+      const emailDisplay = document.getElementById("emailDisplay");
+      if (emailRevealed && currentUser) {
+        emailDisplay.textContent = currentUser.email;
+      } else {
+        emailDisplay.textContent = "********@gmail.com";
+      }
+    };
+    
+    window.editEmail = () => {
+      alert("Edit email feature (coming soon)");
+    };
+    
+    window.editUsername = () => {
+      alert("Edit username feature (coming soon)");
+    };
+    
+    window.changePassword = () => {
+      alert("Change password feature (coming soon)");
+    };
+    
+    window.setAppearance = (mode) => {
+      const lightBtn = document.getElementById("lightMode");
+      const darkBtn = document.getElementById("darkMode");
+      
+      if (mode === 'dark') {
+        document.body.classList.add('dark-mode');
+        lightBtn.classList.remove('active');
+        darkBtn.classList.add('active');
+      } else {
+        document.body.classList.remove('dark-mode');
+        lightBtn.classList.add('active');
+        darkBtn.classList.remove('active');
+      }
     };
     
     window.register = () => {
@@ -318,8 +522,10 @@
     
     onAuthStateChanged(auth, user => {
       if (user) {
+        currentUser = user;
         authBox.style.display = "none";
         content.style.display = "block";
+        settingsPage.style.display = "none";
         header.style.display = "flex";
         status.textContent = "Logged in as " + user.email;
         
@@ -328,8 +534,10 @@
         document.getElementById("headerUsername").textContent = username;
         document.getElementById("userAvatar").textContent = username.charAt(0).toUpperCase();
       } else {
+        currentUser = null;
         authBox.style.display = "block";
         content.style.display = "none";
+        settingsPage.style.display = "none";
         header.style.display = "none";
         status.textContent = "Please log in";
       }
