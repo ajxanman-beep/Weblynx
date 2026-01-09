@@ -326,6 +326,13 @@
       onAuthStateChanged,
       signOut
     } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+    import {
+      getDatabase,
+      ref,
+      set,
+      get,
+      child
+    } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
     
     const firebaseConfig = {
       apiKey: "AIzaSyCN8ypq4TxhLwjseqnDJneBO2j_BlARz0M",
@@ -340,6 +347,8 @@
     
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
+    const database = getDatabase(app);
+    const dbRef = ref(database);
     
     const authBox = document.getElementById("auth");
     const content = document.getElementById("content");
@@ -353,18 +362,17 @@
     let currentUser = null;
     
     // Load saved appearance on page load
-    async function loadAppearance() {
+    async function loadAppearance(userId) {
+      if (!userId) return;
       try {
-        const result = await window.storage.get('appearance');
-        if (result && result.value === 'dark') {
+        const snapshot = await get(child(dbRef, `users/${userId}/appearance`));
+        if (snapshot.exists() && snapshot.val() === 'dark') {
           document.body.classList.add('dark-mode');
         }
       } catch (error) {
-        console.log('No saved appearance preference');
+        console.log('No saved appearance preference:', error);
       }
     }
-    
-    setTimeout(loadAppearance, 100);
     
     window.toggleSidebar = () => {
       sidebar.classList.toggle("open");
@@ -384,6 +392,23 @@
     
     window.register = () => {
       createUserWithEmailAndPassword(auth, email.value, password.value)
+        .then(async (userCredential) => {
+          // Save user data on registration
+          const user = userCredential.user;
+          const username = user.email.split('@')[0];
+          
+          try {
+            await set(ref(database, `users/${user.uid}`), {
+              email: user.email,
+              username: username,
+              appearance: 'light',
+              createdAt: new Date().toISOString()
+            });
+            console.log('User data saved successfully');
+          } catch (error) {
+            console.error('Failed to save user data:', error);
+          }
+        })
         .catch(err => alert(err.message));
     };
     
@@ -399,7 +424,7 @@
       }
     };
     
-    onAuthStateChanged(auth, user => {
+    onAuthStateChanged(auth, async user => {
       if (user) {
         currentUser = user;
         authBox.style.display = "none";
@@ -407,10 +432,40 @@
         header.style.display = "flex";
         status.textContent = "Logged in as " + user.email;
         
-        // Set user avatar and username
-        const username = user.email.split('@')[0];
-        document.getElementById("headerUsername").textContent = username;
-        document.getElementById("userAvatar").textContent = username.charAt(0).toUpperCase();
+        // Load user data from Firebase
+        try {
+          const snapshot = await get(child(dbRef, `users/${user.uid}`));
+          if (snapshot.exists()) {
+            const userData = snapshot.val();
+            const username = userData.username || user.email.split('@')[0];
+            document.getElementById("headerUsername").textContent = username;
+            document.getElementById("userAvatar").textContent = username.charAt(0).toUpperCase();
+            
+            // Load appearance
+            if (userData.appearance === 'dark') {
+              document.body.classList.add('dark-mode');
+            }
+          } else {
+            // Fallback if no saved data - create initial data
+            const username = user.email.split('@')[0];
+            document.getElementById("headerUsername").textContent = username;
+            document.getElementById("userAvatar").textContent = username.charAt(0).toUpperCase();
+            
+            // Save initial data
+            await set(ref(database, `users/${user.uid}`), {
+              email: user.email,
+              username: username,
+              appearance: 'light',
+              createdAt: new Date().toISOString()
+            });
+          }
+        } catch (error) {
+          console.log('Could not load user data:', error);
+          // Fallback
+          const username = user.email.split('@')[0];
+          document.getElementById("headerUsername").textContent = username;
+          document.getElementById("userAvatar").textContent = username.charAt(0).toUpperCase();
+        }
       } else {
         currentUser = null;
         authBox.style.display = "block";

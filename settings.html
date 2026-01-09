@@ -249,6 +249,14 @@
       getAuth,
       onAuthStateChanged
     } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+    import {
+      getDatabase,
+      ref,
+      set,
+      get,
+      child,
+      update
+    } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
     
     const firebaseConfig = {
       apiKey: "AIzaSyCN8ypq4TxhLwjseqnDJneBO2j_BlARz0M",
@@ -263,23 +271,25 @@
     
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
+    const database = getDatabase(app);
+    const dbRef = ref(database);
     
     let emailRevealed = false;
     let currentUser = null;
+    let storedEmail = "";
     
     // Load saved appearance on page load
-    async function loadAppearance() {
+    async function loadAppearance(userId) {
+      if (!userId) return;
       try {
-        const result = await window.storage.get('appearance');
-        if (result && result.value) {
-          setAppearance(result.value, false);
+        const snapshot = await get(child(dbRef, `users/${userId}/appearance`));
+        if (snapshot.exists()) {
+          setAppearance(snapshot.val(), false);
         }
       } catch (error) {
-        console.log('No saved appearance preference');
+        console.log('No saved appearance preference:', error);
       }
     }
-    
-    setTimeout(loadAppearance, 100);
     
     window.goBack = () => {
       window.location.href = 'index.html';
@@ -288,19 +298,43 @@
     window.toggleEmailReveal = () => {
       emailRevealed = !emailRevealed;
       const emailDisplay = document.getElementById("emailDisplay");
-      if (emailRevealed && currentUser) {
-        emailDisplay.textContent = currentUser.email;
+      if (emailRevealed) {
+        emailDisplay.textContent = storedEmail || (currentUser ? currentUser.email : "********@gmail.com");
       } else {
         emailDisplay.textContent = "********@gmail.com";
       }
     };
     
-    window.editEmail = () => {
-      alert("Edit email feature (coming soon)");
+    window.editEmail = async () => {
+      const newEmail = prompt("Enter new email:", storedEmail || currentUser.email);
+      if (newEmail && newEmail !== storedEmail) {
+        try {
+          await update(ref(database, `users/${currentUser.uid}`), {
+            email: newEmail
+          });
+          storedEmail = newEmail;
+          alert("Email updated successfully!");
+          location.reload();
+        } catch (error) {
+          alert("Failed to update email: " + error.message);
+        }
+      }
     };
     
-    window.editUsername = () => {
-      alert("Edit username feature (coming soon)");
+    window.editUsername = async () => {
+      const currentUsername = document.getElementById("usernameDisplay").textContent;
+      const newUsername = prompt("Enter new username:", currentUsername);
+      if (newUsername && newUsername !== currentUsername) {
+        try {
+          await update(ref(database, `users/${currentUser.uid}`), {
+            username: newUsername
+          });
+          alert("Username updated successfully!");
+          location.reload();
+        } catch (error) {
+          alert("Failed to update username: " + error.message);
+        }
+      }
     };
     
     window.changePassword = () => {
@@ -321,26 +355,58 @@
         darkBtn.classList.remove('active');
       }
       
-      if (shouldSave) {
+      if (shouldSave && currentUser) {
         try {
-          const result = await window.storage.set('appearance', mode);
-          if (result) {
-            console.log('Appearance saved:', mode);
-          }
+          await update(ref(database, `users/${currentUser.uid}`), {
+            appearance: mode
+          });
+          console.log('Appearance saved:', mode);
         } catch (error) {
           console.error('Failed to save appearance:', error);
         }
       }
     };
     
-    onAuthStateChanged(auth, user => {
+    onAuthStateChanged(auth, async user => {
       if (user) {
         currentUser = user;
-        const username = user.email.split('@')[0];
-        document.getElementById("headerUsername").textContent = username;
-        document.getElementById("userAvatar").textContent = username.charAt(0).toUpperCase();
-        document.getElementById("usernameDisplay").textContent = username;
-        document.getElementById("emailDisplay").textContent = emailRevealed ? user.email : "********@gmail.com";
+        
+        // Load user data from storage
+        try {
+          const result = await window.storage.get(`user_${user.uid}_data`);
+          if (result && result.value) {
+            const userData = JSON.parse(result.value);
+            const username = userData.username || user.email.split('@')[0];
+            const email = userData.email || user.email;
+            
+            document.getElementById("headerUsername").textContent = username;
+            document.getElementById("userAvatar").textContent = username.charAt(0).toUpperCase();
+            document.getElementById("usernameDisplay").textContent = username;
+            document.getElementById("emailDisplay").textContent = emailRevealed ? email : "********@gmail.com";
+          } else {
+            // Fallback if no saved data - create initial data
+            const username = user.email.split('@')[0];
+            document.getElementById("headerUsername").textContent = username;
+            document.getElementById("userAvatar").textContent = username.charAt(0).toUpperCase();
+            document.getElementById("usernameDisplay").textContent = username;
+            document.getElementById("emailDisplay").textContent = emailRevealed ? user.email : "********@gmail.com";
+            
+            // Save initial data
+            await window.storage.set(`user_${user.uid}_data`, JSON.stringify({
+              email: user.email,
+              username: username,
+              createdAt: new Date().toISOString()
+            }));
+          }
+        } catch (error) {
+          console.log('Could not load user data:', error);
+          // Fallback
+          const username = user.email.split('@')[0];
+          document.getElementById("headerUsername").textContent = username;
+          document.getElementById("userAvatar").textContent = username.charAt(0).toUpperCase();
+          document.getElementById("usernameDisplay").textContent = username;
+          document.getElementById("emailDisplay").textContent = emailRevealed ? user.email : "********@gmail.com";
+        }
       } else {
         // Redirect to login if not authenticated
         window.location.href = 'index.html';
