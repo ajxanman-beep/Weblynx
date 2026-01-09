@@ -8,21 +8,21 @@
     signOut
   } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 
+  const firebaseConfig = {
+    apiKey: "AIzaSyBf8YUdEGpW2h4TEgETiRUaj6fuCgfoe00",
+    authDomain: "website-fe89c.firebaseapp.com",
+    databaseURL: "https://website-fe89c-default-rtdb.firebaseio.com",
+    projectId: "website-fe89c",
+    storageBucket: "website-fe89c.firebasestorage.app",
+    messagingSenderId: "89840845670",
+    appId: "1:89840845670:web:fece1d927e7017e6aabea7",
+    measurementId: "G-4TP1XHHW6M"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+
   document.addEventListener("DOMContentLoaded", () => {
-    const firebaseConfig = {
-      apiKey: "AIzaSyBf8YUdEGpW2h4TEgETiRUaj6fuCgfoe00",
-      authDomain: "website-fe89c.firebaseapp.com",
-      databaseURL: "https://website-fe89c-default-rtdb.firebaseio.com/",
-      projectId: "website-fe89c",
-      storageBucket: "website-fe89c.firebasestorage.app",
-      messagingSenderId: "89840845670",
-      appId: "1:89840845670:web:fece1d927e7017e6aabea7",
-      measurementId: "G-4TP1XHHW6M"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-
     const authBox = document.getElementById("auth");
     const content = document.getElementById("content");
     const status = document.getElementById("status");
