@@ -29,9 +29,9 @@
     
     .header-title { margin-left: 20px; font-size: 20px; font-weight: bold; }
     
-    /* ADMIN BUTTON (Hidden by default) */
+    /* ADMIN BUTTON */
     #adminBtn {
-      display: none; /* Hidden unless user is admin */
+      display: none;
       margin-left: 15px;
       padding: 8px 16px;
       background: #ff4444;
@@ -77,8 +77,19 @@
     .message.own { background: #4285f4; color: white; margin-left: auto; border-bottom-right-radius: 4px; }
     .message.other { background: #e8e8e8; color: #333; margin-right: auto; border-bottom-left-radius: 4px; }
     
-    .message-user { font-size: 11px; opacity: 0.7; margin-bottom: 3px; font-weight: bold; }
-    .message.own .message-user { text-align: right; }
+    .message-user { 
+      font-size: 11px; 
+      opacity: 0.7; 
+      margin-bottom: 3px; 
+      font-weight: bold; 
+      position: relative; /* Needed for tooltip positioning */
+      display: inline-block;
+    }
+    
+    .message.own .message-user { 
+      text-align: right; 
+      width: 100%; /* Ensures tooltip centers correctly on own messages */
+    }
     
     .message-text { font-size: 14px; line-height: 1.4; display: block; }
 
@@ -89,7 +100,40 @@
     .delete-btn:hover { color: #ff4d4d; }
     
     .message-time { font-size: 10px; opacity: 0.6; margin-top: 3px; }
+
+    /* --- ADMIN TOOLTIP STYLES --- */
+    .email-tooltip {
+      visibility: hidden;
+      width: auto;
+      background-color: #333;
+      color: #fff;
+      text-align: center;
+      padding: 5px 10px;
+      border-radius: 6px;
+      position: absolute;
+      z-index: 10;
+      bottom: 120%; /* Show above the name */
+      left: 0;
+      opacity: 0;
+      transition: opacity 0.3s;
+      font-size: 10px;
+      font-weight: normal;
+      white-space: nowrap;
+      pointer-events: none;
+    }
     
+    /* Make tooltip visible on hover */
+    .message-user:hover .email-tooltip {
+      visibility: visible;
+      opacity: 1;
+    }
+
+    /* Show dotted line so Admin knows they can hover */
+    .admin-viewable {
+      text-decoration: underline dotted;
+      cursor: help;
+    }
+
     /* INPUT BOX */
     #messageInputBox {
       position: fixed; left: 0; right: 0; bottom: 0; height: 70px;
@@ -114,6 +158,7 @@
     body.dark-mode #messageInputBox { background: #2c2c2c; }
     body.dark-mode #messageInput { background: #1a1a1a; color: white; border-color: #444; }
     body.dark-mode #typingIndicator { color: #aaa; }
+    body.dark-mode .email-tooltip { background-color: #fff; color: #000; }
   </style>
 </head>
 <body>
@@ -166,14 +211,10 @@
     window.goBack = () => { window.location.href = 'index.html'; };
     window.handleKeyPress = (e) => { if (e.key === 'Enter') sendMessage(); };
 
-    // --- ADMIN FUNCTION: CLEAR ALL MESSAGES ---
     window.clearAllMessages = () => {
       if (isAdmin && confirm("ADMIN ACTION: Are you sure you want to delete ALL messages for everyone?")) {
         set(ref(database, 'messages'), null)
-          .then(() => {
-             // Reload page to clear local DOM clearly
-             window.location.reload(); 
-          })
+          .then(() => window.location.reload())
           .catch((error) => alert("Error: " + error.message));
       }
     };
@@ -196,7 +237,7 @@
         text: message,
         username: currentUsername,
         userId: currentUser.uid,
-        email: currentUser.email, // Storing email for admin visibility
+        email: currentUser.email, // Saves email for admin view
         timestamp: serverTimestamp()
       });
       
@@ -222,15 +263,11 @@
         const typingData = snapshot.val();
         const indicator = document.getElementById("typingIndicator");
         let typers = [];
-
         if (typingData) {
           Object.keys(typingData).forEach(uid => {
-            if (uid !== currentUser.uid) {
-              typers.push(typingData[uid]);
-            }
+            if (uid !== currentUser.uid) typers.push(typingData[uid]);
           });
         }
-
         indicator.textContent = typers.length > 0 ? 
           typers.join(", ") + (typers.length > 1 ? " are typing..." : " is typing...") : "";
       });
@@ -239,8 +276,6 @@
     function loadMessages() {
       const chatBox = document.getElementById("chatBox");
       const messagesRef = ref(database, 'messages');
-      
-      // Clear box initially to prevent duplicates if function called twice
       chatBox.innerHTML = "";
 
       onChildAdded(messagesRef, (snapshot) => {
@@ -252,16 +287,28 @@
         messageDiv.id = `msg-${msgId}`;
         messageDiv.className = `message ${isOwn ? 'own' : 'other'}`;
         
+        // --- USERNAME & TOOLTIP LOGIC ---
         const userSpan = document.createElement("div");
         userSpan.className = "message-user";
         userSpan.textContent = isOwn ? "You" : (msg.username || "Unknown");
+
+        // If User is Admin, allow email hover
+        if (isAdmin && msg.email) {
+          userSpan.classList.add("admin-viewable"); // Adds dotted underline
+          
+          const tooltip = document.createElement("span");
+          tooltip.className = "email-tooltip";
+          tooltip.textContent = msg.email; // The email text
+          userSpan.appendChild(tooltip);
+        }
+
         messageDiv.appendChild(userSpan);
         
+        // --- MESSAGE TEXT ---
         const textSpan = document.createElement("div");
         textSpan.className = "message-text";
         textSpan.textContent = msg.text;
 
-        // Show Delete Button if: It's your message OR you are an Admin
         if (isOwn || isAdmin) {
           const delSpan = document.createElement("span");
           delSpan.className = "delete-btn";
@@ -287,44 +334,32 @@
       });
     }
     
-    // --- MAIN AUTH CHECK ---
     onAuthStateChanged(auth, async (user) => {
       if (!user) { window.location.href = 'index.html'; return; }
       currentUser = user;
       
       try {
-        // Fetch User Data including isAdmin status
         const snapshot = await get(child(dbRef, `users/${user.uid}`));
         const userData = snapshot.exists() ? snapshot.val() : {};
         
         currentUsername = userData.username || user.email.split('@')[0];
-        isAdmin = userData.isAdmin === true; // Check if admin
+        isAdmin = userData.isAdmin === true;
 
-        // Update UI
         document.getElementById("headerUsername").textContent = currentUsername;
         document.getElementById("userAvatar").textContent = currentUsername.charAt(0).toUpperCase();
         
-        // Show Admin Button if admin
-        if (isAdmin) {
-          document.getElementById("adminBtn").style.display = "block";
-        }
+        if (isAdmin) document.getElementById("adminBtn").style.display = "block";
 
-        // Save/Update user data in DB (Email + Admin status preservation)
-        // We use update so we don't overwrite existing isAdmin flags
+        // Save email on login so database stays updated
         const updates = {};
         updates[`users/${user.uid}/email`] = user.email;
         updates[`users/${user.uid}/username`] = currentUsername;
-        // updates[`users/${user.uid}/isAdmin`] = isAdmin; // Don't overwrite this here!
         
-        // Appearance
         if (userData.appearance === 'dark') document.body.classList.add('dark-mode');
         
         loadMessages();
         setupTypingListener();
-        
-      } catch (error) {
-        console.error("Error fetching user data:", error);
-      }
+      } catch (error) { console.error(error); }
     });
   </script>
 </body>
