@@ -44,9 +44,7 @@
       cursor: pointer;
     }
     
-    .back-btn:hover {
-      background: #357ae8;
-    }
+    .back-btn:hover { background: #357ae8; }
     
     .header-title {
       margin-left: 20px;
@@ -106,7 +104,6 @@
       background: #4285f4;
       color: white;
       margin-left: auto;
-      text-align: right;
       border-bottom-right-radius: 4px;
     }
     
@@ -123,26 +120,29 @@
       margin-bottom: 3px;
       font-weight: bold;
     }
+
+    /* Keep the name right-aligned on your own messages */
+    .message.own .message-user {
+        text-align: right;
+    }
     
     .message-text {
       font-size: 14px;
       line-height: 1.4;
+      display: block;
     }
 
     .delete-btn {
       margin-left: 8px;
       cursor: pointer;
-      opacity: 0.5;
+      opacity: 0.6;
       font-weight: bold;
       font-size: 16px;
-      vertical-align: middle;
-      transition: opacity 0.2s;
+      color: #ffcccc; /* Lighter color for own messages */
+      transition: color 0.2s;
     }
 
-    .delete-btn:hover {
-      opacity: 1;
-      color: #ff4d4d;
-    }
+    .delete-btn:hover { color: #ff4d4d; }
     
     .message-time {
       font-size: 10px;
@@ -163,7 +163,6 @@
       gap: 10px;
       box-shadow: 0 -2px 5px rgba(0,0,0,0.1);
       align-items: center;
-      transition: background 0.3s ease;
     }
     
     #messageInput {
@@ -172,15 +171,7 @@
       border-radius: 25px;
       border: 1px solid #ddd;
       background: #f5f5f5;
-      color: #333;
       outline: none;
-      font-size: 14px;
-      transition: background 0.3s ease, border-color 0.3s ease;
-    }
-    
-    #messageInput:focus {
-      border-color: #4285f4;
-      background: white;
     }
     
     #sendBtn {
@@ -191,25 +182,14 @@
       border-radius: 25px;
       cursor: pointer;
       font-weight: bold;
-      transition: background 0.3s ease;
     }
-    
-    #sendBtn:hover { background: #357ae8; }
-    #sendBtn:active { transform: scale(0.95); }
-    
+
     /* DARK MODE */
     body.dark-mode { background: #1a1a1a; color: white; }
-    body.dark-mode .header { background: #2c2c2c; color: white; }
+    body.dark-mode .header { background: #2c2c2c; }
     body.dark-mode .message.other { background: #2c2c2c; color: white; }
     body.dark-mode #messageInputBox { background: #2c2c2c; }
     body.dark-mode #messageInput { background: #1a1a1a; color: white; border-color: #444; }
-    body.dark-mode #messageInput:focus { background: #333; border-color: #4285f4; }
-    
-    /* SCROLLBAR */
-    #chatBox::-webkit-scrollbar { width: 8px; }
-    #chatBox::-webkit-scrollbar-track { background: transparent; }
-    #chatBox::-webkit-scrollbar-thumb { background: #ccc; border-radius: 4px; }
-    body.dark-mode #chatBox::-webkit-scrollbar-thumb { background: #555; }
   </style>
 </head>
 <body>
@@ -231,20 +211,9 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
     import {
-      getAuth,
-      onAuthStateChanged
-    } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
-    import {
-      getDatabase,
-      ref,
-      push,
-      remove,
-      onChildAdded,
-      onChildRemoved,
-      get,
-      child,
-      serverTimestamp
+      getDatabase, ref, push, remove, onChildAdded, onChildRemoved, get, child, serverTimestamp
     } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
     
     const firebaseConfig = {
@@ -265,27 +234,13 @@
     let currentUser = null;
     let currentUsername = "User";
     
-    async function loadAppearance(userId) {
-      if (!userId) return;
-      try {
-        const snapshot = await get(child(dbRef, `users/${userId}/appearance`));
-        if (snapshot.exists() && snapshot.val() === 'dark') {
-          document.body.classList.add('dark-mode');
-        }
-      } catch (error) { console.log('Appearance error:', error); }
-    }
-    
     window.goBack = () => { window.location.href = 'index.html'; };
-    
-    window.handleKeyPress = (event) => {
-      if (event.key === 'Enter') sendMessage();
-    };
+    window.handleKeyPress = (e) => { if (e.key === 'Enter') sendMessage(); };
     
     window.sendMessage = () => {
       const input = document.getElementById("messageInput");
       const message = input.value.trim();
       if (!message || !currentUser) return;
-      
       push(ref(database, 'messages'), {
         text: message,
         username: currentUsername,
@@ -295,56 +250,48 @@
       input.value = "";
     };
 
-    // New Delete Function
     window.deleteMessage = (msgId) => {
       if (confirm("Delete this message?")) {
-        const msgRef = ref(database, `messages/${msgId}`);
-        remove(msgRef).catch(err => console.error("Delete failed:", err));
+        remove(ref(database, `messages/${msgId}`));
       }
     };
     
-    function formatTime(timestamp) {
-      if (!timestamp) return '';
-      const date = new Date(timestamp);
-      return date.getHours().toString().padStart(2, '0') + ":" + 
-             date.getMinutes().toString().padStart(2, '0');
+    function formatTime(ts) {
+      if (!ts) return '';
+      const date = new Date(ts);
+      return date.getHours().toString().padStart(2, '0') + ":" + date.getMinutes().toString().padStart(2, '0');
     }
     
     function loadMessages() {
       const chatBox = document.getElementById("chatBox");
       const messagesRef = ref(database, 'messages');
       
-      // Listen for new messages
       onChildAdded(messagesRef, (snapshot) => {
         const msg = snapshot.val();
         const msgId = snapshot.key;
-        const messageDiv = document.createElement("div");
-        messageDiv.id = `msg-${msgId}`; // Link DOM element to Firebase ID
-        
         const isOwn = currentUser && msg.userId === currentUser.uid;
+        
+        const messageDiv = document.createElement("div");
+        messageDiv.id = `msg-${msgId}`;
         messageDiv.className = `message ${isOwn ? 'own' : 'other'}`;
         
-        if (!isOwn) {
-          const userSpan = document.createElement("div");
-          userSpan.className = "message-user";
-          userSpan.textContent = msg.username || "Unknown";
-          messageDiv.appendChild(userSpan);
-        }
+        // --- SHOW USERNAME ON ALL MESSAGES ---
+        const userSpan = document.createElement("div");
+        userSpan.className = "message-user";
+        userSpan.textContent = isOwn ? "You" : (msg.username || "Unknown");
+        messageDiv.appendChild(userSpan);
         
         const textSpan = document.createElement("div");
         textSpan.className = "message-text";
         textSpan.textContent = msg.text;
 
-        // Add delete button only if it's the current user's message
         if (isOwn) {
           const delSpan = document.createElement("span");
           delSpan.className = "delete-btn";
           delSpan.innerHTML = "&times;";
-          delSpan.title = "Delete Message";
           delSpan.onclick = () => deleteMessage(msgId);
           textSpan.appendChild(delSpan);
         }
-        
         messageDiv.appendChild(textSpan);
         
         const timeSpan = document.createElement("div");
@@ -356,33 +303,25 @@
         chatBox.scrollTop = chatBox.scrollHeight;
       });
 
-      // Listen for deleted messages to remove them from screen instantly
       onChildRemoved(messagesRef, (snapshot) => {
-        const elementToRemove = document.getElementById(`msg-${snapshot.key}`);
-        if (elementToRemove) elementToRemove.remove();
+        const el = document.getElementById(`msg-${snapshot.key}`);
+        if (el) el.remove();
       });
     }
     
     onAuthStateChanged(auth, async (user) => {
-      if (!user) {
-        window.location.href = 'index.html';
-        return;
-      }
+      if (!user) { window.location.href = 'index.html'; return; }
       currentUser = user;
-      try {
-        const snapshot = await get(child(dbRef, `users/${user.uid}`));
-        const userData = snapshot.exists() ? snapshot.val() : null;
-        currentUsername = (userData && userData.username) || user.email.split('@')[0];
-        
-        document.getElementById("headerUsername").textContent = currentUsername;
-        document.getElementById("userAvatar").textContent = currentUsername.charAt(0).toUpperCase();
-        
-        loadAppearance(user.uid);
-        loadMessages();
-      } catch (error) {
-        console.error('Auth error:', error);
-        loadMessages();
-      }
+      const snapshot = await get(child(dbRef, `users/${user.uid}`));
+      currentUsername = snapshot.exists() ? snapshot.val().username : user.email.split('@')[0];
+      document.getElementById("headerUsername").textContent = currentUsername;
+      document.getElementById("userAvatar").textContent = currentUsername.charAt(0).toUpperCase();
+      
+      // Load appearance
+      const appSnap = await get(child(dbRef, `users/${user.uid}/appearance`));
+      if (appSnap.exists() && appSnap.val() === 'dark') document.body.classList.add('dark-mode');
+      
+      loadMessages();
     });
   </script>
 </body>
