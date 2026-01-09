@@ -314,6 +314,36 @@
     body.dark-mode .sidebar-footer {
       border-top-color: #444;
     }
+    body.dark-mode .settings-section {
+      background: #2c2c2c;
+    }
+    body.dark-mode .settings-title {
+      background: #2c2c2c;
+    }
+    body.dark-mode .settings-item {
+      border-bottom-color: #444;
+    }
+    body.dark-mode .section-title,
+    body.dark-mode .settings-label,
+    body.dark-mode .settings-value {
+      color: #ddd;
+    }
+    body.dark-mode .edit-btn {
+      background: #444;
+      color: white;
+    }
+    body.dark-mode .edit-btn:hover {
+      background: #555;
+    }
+    body.dark-mode .toggle-option {
+      background: #444;
+      color: white;
+      border-color: #444;
+    }
+    body.dark-mode .toggle-option.active {
+      border-color: #4285f4;
+      background: #357ae8;
+    }
     body.dark-mode input {
       background: #444;
       color: white;
@@ -496,6 +526,19 @@
         const username = currentUser.email.split('@')[0];
         document.getElementById("usernameDisplay").textContent = username;
         document.getElementById("emailDisplay").textContent = emailRevealed ? currentUser.email : "********@gmail.com";
+      }
+      
+      // Update appearance toggle buttons to reflect current state
+      const isDarkMode = document.body.classList.contains('dark-mode');
+      const lightBtn = document.getElementById("lightMode");
+      const darkBtn = document.getElementById("darkMode");
+      
+      if (isDarkMode) {
+        lightBtn.classList.remove('active');
+        darkBtn.classList.add('active');
+      } else {
+        lightBtn.classList.add('active');
+        darkBtn.classList.remove('active');
       }
       
       toggleSidebar();
