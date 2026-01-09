@@ -368,50 +368,33 @@
     };
     
     onAuthStateChanged(auth, async user => {
-      if (user) {
-        currentUser = user;
-        
-        // Load user data from storage
-        try {
-          const result = await window.storage.get(`user_${user.uid}_data`);
-          if (result && result.value) {
-            const userData = JSON.parse(result.value);
-            const username = userData.username || user.email.split('@')[0];
-            const email = userData.email || user.email;
-            
-            document.getElementById("headerUsername").textContent = username;
-            document.getElementById("userAvatar").textContent = username.charAt(0).toUpperCase();
-            document.getElementById("usernameDisplay").textContent = username;
-            document.getElementById("emailDisplay").textContent = emailRevealed ? email : "********@gmail.com";
-          } else {
-            // Fallback if no saved data - create initial data
-            const username = user.email.split('@')[0];
-            document.getElementById("headerUsername").textContent = username;
-            document.getElementById("userAvatar").textContent = username.charAt(0).toUpperCase();
-            document.getElementById("usernameDisplay").textContent = username;
-            document.getElementById("emailDisplay").textContent = emailRevealed ? user.email : "********@gmail.com";
-            
-            // Save initial data
-            await window.storage.set(`user_${user.uid}_data`, JSON.stringify({
-              email: user.email,
-              username: username,
-              createdAt: new Date().toISOString()
-            }));
-          }
-        } catch (error) {
-          console.log('Could not load user data:', error);
-          // Fallback
-          const username = user.email.split('@')[0];
-          document.getElementById("headerUsername").textContent = username;
-          document.getElementById("userAvatar").textContent = username.charAt(0).toUpperCase();
-          document.getElementById("usernameDisplay").textContent = username;
-          document.getElementById("emailDisplay").textContent = emailRevealed ? user.email : "********@gmail.com";
-        }
-      } else {
-        // Redirect to login if not authenticated
+      if (!user) {
         window.location.href = 'index.html';
+        return;
+      }
+
+      currentUser = user;
+
+      try {
+        const snapshot = await get(child(dbRef, `users/${user.uid}`));
+        if (snapshot.exists()) {
+          const data = snapshot.val();
+
+          document.getElementById("headerUsername").textContent = data.username;
+          document.getElementById("userAvatar").textContent = data.username.charAt(0).toUpperCase();
+          document.getElementById("usernameDisplay").textContent = data.username;
+          storedEmail = data.email;
+
+          document.getElementById("emailDisplay").textContent =
+          emailRevealed ? data.email : "********@gmail.com";
+
+         await loadAppearance(user.uid);
+       }
+      } catch (err) {
+        console.error(err);
       }
     });
+
   </script>
 </body>
 </html>
