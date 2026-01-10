@@ -3,89 +3,107 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Games - Play & Chat</title>
+  <title>Games - Smooth Experience</title>
   <style>
-    /* --- Base Theme (Image Inspired) --- */
+    /* --- Base Dark Theme --- */
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { 
-        font-family: Arial, sans-serif; 
-        background: #121212; 
-        color: white;
-        overflow-x: hidden;
+      font-family: Arial, sans-serif; 
+      background: #121212; 
+      color: white; 
+      overflow-x: hidden; 
     }
 
-    /* --- Header & Sidebar --- */
-    .header { position: fixed; top: 0; left: 0; width: 100%; height: 60px; background: #1a1a1a; display: flex; align-items: center; padding: 0 20px; z-index: 1100; border-bottom: 1px solid #333; }
-    .hamburger { width: 30px; height: 30px; cursor: pointer; display: flex; flex-direction: column; justify-content: space-around; margin-right: 15px; }
+    /* --- Header --- */
+    .header { 
+      position: fixed; top: 0; left: 0; width: 100%; height: 60px; 
+      background: #1a1a1a; display: flex; align-items: center; 
+      padding: 0 20px; z-index: 1100; border-bottom: 1px solid #333; 
+    }
+    .hamburger { 
+      width: 30px; height: 30px; cursor: pointer; 
+      display: flex; flex-direction: column; justify-content: space-around; 
+      margin-right: 15px; 
+    }
     .hamburger span { width: 100%; height: 3px; background: white; border-radius: 2px; }
-    .user-info { margin-left: auto; display: flex; align-items: center; gap: 10px; }
-    .avatar { width: 35px; height: 35px; border-radius: 50%; background: #4285f4; display: flex; align-items: center; justify-content: center; font-weight: bold; }
     
-    .sidebar { position: fixed; top: 0; left: -280px; width: 280px; height: 100vh; background: #2c2c2c; transition: left 0.3s; z-index: 1200; display: flex; flex-direction: column; }
+    .user-info { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+    .avatar { 
+      width: 35px; height: 35px; border-radius: 50%; background: #4285f4; 
+      display: flex; align-items: center; justify-content: center; font-weight: bold; 
+    }
+
+    /* --- Sidebar --- */
+    .sidebar { 
+      position: fixed; top: 0; left: -280px; width: 280px; height: 100vh; 
+      background: #2c2c2c; transition: left 0.3s; z-index: 1200; 
+    }
     .sidebar.open { left: 0; }
-    .sidebar-header { padding: 20px; background: #1a1a1a; font-size: 24px; font-weight: bold; }
-    .nav-item { padding: 15px 25px; cursor: pointer; transition: 0.2s; border-bottom: 1px solid #3a3a3a; }
+    .nav-item { padding: 15px 25px; cursor: pointer; border-bottom: 1px solid #3a3a3a; transition: 0.2s; }
     .nav-item:hover { background: #3a3a3a; }
-    .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); opacity: 0; pointer-events: none; transition: opacity 0.3s; z-index: 1150; }
+    
+    .overlay { 
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+      background: rgba(0,0,0,0.7); opacity: 0; pointer-events: none; 
+      transition: opacity 0.3s; z-index: 1150; 
+    }
     .overlay.active { opacity: 1; pointer-events: all; }
 
-    /* --- Search Bar --- */
+    /* --- Search Section --- */
     .search-container { margin: 90px auto 20px; max-width: 600px; padding: 0 20px; }
-    #gameSearch { width: 100%; padding: 12px 20px; background: #2c2c2c; border: 2px solid #444; border-radius: 4px; color: white; font-size: 16px; outline: none; }
+    #gameSearch { 
+      width: 100%; padding: 12px 20px; background: #2c2c2c; 
+      border: 2px solid #444; border-radius: 4px; color: white; font-size: 16px; outline: none; 
+    }
     #gameSearch:focus { border-color: #4285f4; }
 
-    /* --- Game Grid --- */
+    /* --- Game Grid (Image Theme) --- */
     .game-container { padding: 20px; display: flex; flex-wrap: wrap; gap: 15px; justify-content: center; }
-    .game-card {
-        background: white;
-        color: black;
-        padding: 15px 30px;
-        cursor: pointer;
-        font-weight: bold;
-        text-transform: lowercase;
-        border-radius: 2px;
-        transition: transform 0.2s, background 0.2s;
-        min-width: 120px;
-        text-align: center;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    .game-card { 
+      background: white; color: black; padding: 15px 30px; cursor: pointer; 
+      font-weight: bold; text-transform: lowercase; border-radius: 2px; 
+      min-width: 120px; text-align: center; transition: transform 0.2s;
     }
-    .game-card:hover { transform: translateY(-3px); background: #ddd; }
+    .game-card:hover { transform: translateY(-3px); background: #eee; }
 
-    /* --- Embedded Game View --- */
+    /* --- Game View System --- */
     #gameView { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100vh; background: black; z-index: 1300; }
     #gameIframe { width: 100%; height: 100%; border: none; }
-    .close-btn { position: absolute; top: 15px; right: 20px; background: #ea4335; color: white; border: none; padding: 10px 20px; cursor: pointer; font-weight: bold; border-radius: 4px; z-index: 1500; }
+    .close-btn { 
+      position: absolute; top: 15px; right: 20px; background: #ea4335; 
+      color: white; border: none; padding: 10px 20px; cursor: pointer; 
+      font-weight: bold; border-radius: 4px; z-index: 1500; 
+    }
 
     /* --- Movable & Resizable Chat Widget --- */
     #chatWidget {
-        position: absolute; top: 80px; left: 20px; width: 320px; height: 450px;
-        min-width: 200px; min-height: 100px;
-        background: #2c2c2c; border: 1px solid #444; border-radius: 8px;
-        z-index: 1400; display: flex; flex-direction: column;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.8); overflow: hidden;
+      position: absolute; top: 80px; left: 20px; width: 320px; height: 450px;
+      min-width: 200px; min-height: 100px; background: #2c2c2c; 
+      border: 1px solid #444; border-radius: 8px; z-index: 1400; 
+      display: flex; flex-direction: column; box-shadow: 0 10px 30px rgba(0,0,0,0.8); overflow: hidden;
     }
-    #chatHeader { padding: 12px; background: #4285f4; cursor: move; font-weight: bold; display: flex; justify-content: space-between; color: white; }
+    #chatHeader { 
+      padding: 12px; background: #4285f4; cursor: move; font-weight: bold; 
+      display: flex; justify-content: space-between; color: white; user-select: none; 
+    }
     #chatIframe { flex: 1; border: none; background: white; }
     .min-btn { cursor: pointer; background: rgba(0,0,0,0.2); border: none; color: white; padding: 0 10px; border-radius: 3px; }
     
-    /* Resize Handle styling */
+    /* Resize Handle */
     #chatResizeHandle {
-        width: 15px; height: 15px; background: transparent;
-        position: absolute; right: 0; bottom: 0;
-        cursor: nwse-resize; z-index: 1501;
+      width: 20px; height: 20px; position: absolute; right: 0; bottom: 0;
+      cursor: nwse-resize; z-index: 1501; background: transparent;
     }
     #chatResizeHandle::after {
-        content: ""; position: absolute; right: 3px; bottom: 3px;
-        width: 6px; height: 6px; border-right: 2px solid white; border-bottom: 2px solid white;
+      content: ""; position: absolute; right: 4px; bottom: 4px;
+      width: 8px; height: 8px; border-right: 2px solid #aaa; border-bottom: 2px solid #aaa;
     }
   </style>
 </head>
 <body>
 
   <div class="header">
-    <div class="hamburger" onclick="toggleSidebar()">
-      <span></span><span></span><span></span>
-    </div>
+    <div class="hamburger" onclick="toggleSidebar()"><span></span><span></span><span></span></div>
     <div class="user-info">
       <div class="avatar" id="userAvatar">U</div>
       <span id="headerUsername">User</span>
@@ -93,165 +111,150 @@
   </div>
 
   <div class="sidebar" id="sidebar">
-    <div class="sidebar-header">Menu</div>
-    <div class="nav-items">
-      <div class="nav-item" onclick="window.location.href='index.html'">🏠 Home</div>
-      <div class="nav-item" onclick="window.location.href='games.html'">🎮 Games</div>
-      <div class="nav-item" onclick="window.location.href='chat.html'">💬 Chat</div>
-    </div>
+    <div style="padding:20px; font-weight:bold; background:#1a1a1a;">Menu</div>
+    <div class="nav-item" onclick="window.location.href='index.html'">🏠 Home</div>
+    <div class="nav-item" onclick="window.location.href='games.html'">🎮 Games</div>
   </div>
   <div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
 
   <div class="search-container">
-    <input type="text" id="gameSearch" placeholder="Search for a game..." onkeyup="filterGames()">
+    <input type="text" id="gameSearch" placeholder="Search games..." onkeyup="filterGames()">
   </div>
 
   <div class="game-container" id="gameGrid"></div>
 
   <div id="gameView">
     <button class="close-btn" onclick="closeGame()">✕ Exit Game</button>
-    
     <div id="chatWidget">
         <div id="chatHeader">
-            <span>💬 Live Chat</span>
-            <button class="min-btn" onclick="toggleChat()">_</button>
+          <span>💬 Game Chat</span>
+          <button class="min-btn" onclick="toggleChat()">_</button>
         </div>
         <iframe id="chatIframe" src="chat.html"></iframe>
         <div id="chatResizeHandle"></div>
     </div>
-
     <iframe id="gameIframe" src=""></iframe>
   </div>
 
-<script>
+  <script>
     let allGames = [];
 
-    // Load Games
+    // Load Games from JSON
     async function loadGames() {
-        const grid = document.getElementById('gameGrid');
-        try {
-            const response = await fetch('games.json');
-            allGames = await response.json();
-            renderGames(allGames);
-        } catch (e) {
-            grid.innerHTML = "<p>Error: Could not load games.json</p>";
-        }
+      try {
+        const response = await fetch('games.json');
+        allGames = await response.json();
+        renderGames(allGames);
+      } catch (e) { console.error("Could not load games.json"); }
     }
 
-    function renderGames(gamesList) {
-        const grid = document.getElementById('gameGrid');
-        grid.innerHTML = '';
-        gamesList.forEach(game => {
-            let label = (game.label || 'game').toLowerCase();
-            if (label.startsWith('cl')) label = label.slice(2);
-            const btn = document.createElement('div');
-            btn.className = 'game-card';
-            btn.innerText = label;
-            btn.onclick = () => openGame(game.path);
-            grid.appendChild(btn);
-        });
+    // Render Buttons with "cl" cleaning
+    function renderGames(list) {
+      const grid = document.getElementById('gameGrid');
+      grid.innerHTML = '';
+      list.forEach(game => {
+        let label = (game.label || 'game').toLowerCase();
+        if (label.startsWith('cl')) label = label.slice(2);
+        
+        const btn = document.createElement('div');
+        btn.className = 'game-card';
+        btn.innerText = label;
+        btn.onclick = () => {
+          document.getElementById('gameIframe').src = game.path;
+          document.getElementById('gameView').style.display = 'block';
+          document.body.style.overflow = 'hidden';
+        };
+        grid.appendChild(btn);
+      });
     }
 
+    // Non-case sensitive search
     function filterGames() {
-        const query = document.getElementById('gameSearch').value.toLowerCase();
-        const filtered = allGames.filter(game => {
-            let label = game.label.toLowerCase();
-            if (label.startsWith('cl')) label = label.slice(2);
-            return label.includes(query);
-        });
-        renderGames(filtered);
-    }
-
-    function openGame(path) {
-        document.getElementById('gameIframe').src = path;
-        document.getElementById('gameView').style.display = 'block';
-        document.body.style.overflow = 'hidden';
+      const q = document.getElementById('gameSearch').value.toLowerCase();
+      const filtered = allGames.filter(g => {
+        let l = g.label.toLowerCase();
+        if (l.startsWith('cl')) l = l.slice(2);
+        return l.includes(q);
+      });
+      renderGames(filtered);
     }
 
     function closeGame() {
-        document.getElementById('gameIframe').src = '';
-        document.getElementById('gameView').style.display = 'none';
-        document.body.style.overflow = 'auto';
+      document.getElementById('gameIframe').src = '';
+      document.getElementById('gameView').style.display = 'none';
+      document.body.style.overflow = 'auto';
     }
 
     function toggleSidebar() {
-        document.getElementById('sidebar').classList.toggle('open');
-        document.getElementById('overlay').classList.toggle('active');
+      document.getElementById('sidebar').classList.toggle('open');
+      document.getElementById('overlay').classList.toggle('active');
     }
 
     function toggleChat() {
-        const widget = document.getElementById('chatWidget');
-        const iframe = document.getElementById('chatIframe');
-        if (iframe.style.display === "none") {
-            iframe.style.display = "block";
-            widget.style.height = "450px";
-        } else {
-            iframe.style.display = "none";
-            widget.style.height = "45px";
-        }
+      const i = document.getElementById('chatIframe');
+      const w = document.getElementById('chatWidget');
+      const isHidden = i.style.display === "none";
+      i.style.display = isHidden ? "block" : "none";
+      w.style.height = isHidden ? "450px" : "45px";
     }
 
-    // --- SMOOTH DRAG & RESIZE LOGIC ---
-    const chatWidget = document.getElementById("chatWidget");
+    /* --- SMOOTH INTERACTION LOGIC --- */
+    const widget = document.getElementById("chatWidget");
+    const header = document.getElementById("chatHeader");
+    const handle = document.getElementById("chatResizeHandle");
     const chatIframe = document.getElementById("chatIframe");
-    const chatHeader = document.getElementById("chatHeader");
-    const resizeHandle = document.getElementById("chatResizeHandle");
 
-    let isResizing = false;
-    let isDragging = false;
+    let activeAction = null; 
+    let startX, startY, startW, startH, startL, startT;
 
-    // Helper to prevent Iframe from stealing mouse focus
-    function setIframePointer(enabled) {
-        chatIframe.style.pointerEvents = enabled ? "auto" : "none";
+    function initAction(e, actionType) {
+      activeAction = actionType;
+      startX = e.clientX;
+      startY = e.clientY;
+      startW = widget.offsetWidth;
+      startH = widget.offsetHeight;
+      startL = widget.offsetLeft;
+      startT = widget.offsetTop;
+      
+      // IMPORTANT: Disable pointer events on iframe so it doesn't steal the mouse
+      chatIframe.style.pointerEvents = "none";
+      
+      window.addEventListener('mousemove', runAction);
+      window.addEventListener('mouseup', stopAction);
     }
 
-    // Drag Logic
-    chatHeader.onmousedown = (e) => {
-        if (e.target.className === "min-btn") return;
-        isDragging = true;
-        setIframePointer(false);
-        let offsetX = e.clientX - chatWidget.offsetLeft;
-        let offsetY = e.clientY - chatWidget.offsetTop;
+    function runAction(e) {
+      if (!activeAction) return;
 
-        document.onmousemove = (e) => {
-            if (!isDragging) return;
-            chatWidget.style.left = (e.clientX - offsetX) + "px";
-            chatWidget.style.top = (e.clientY - offsetY) + "px";
-        };
+      if (activeAction === 'resizing') {
+        const newW = startW + (e.clientX - startX);
+        const newH = startH + (e.clientY - startY);
+        if (newW > 200) widget.style.width = newW + 'px';
+        if (newH > 100) widget.style.height = newH + 'px';
+      } 
+      else if (activeAction === 'dragging') {
+        widget.style.left = (startL + (e.clientX - startX)) + 'px';
+        widget.style.top = (startT + (e.clientY - startY)) + 'px';
+      }
+    }
 
-        document.onmouseup = () => {
-            isDragging = false;
-            setIframePointer(true);
-            document.onmousemove = null;
-        };
-    };
+    function stopAction() {
+      activeAction = null;
+      chatIframe.style.pointerEvents = "auto"; // Re-enable chat interaction
+      window.removeEventListener('mousemove', runAction);
+      window.removeEventListener('mouseup', stopAction);
+    }
 
-    // Resize Logic
-    resizeHandle.onmousedown = (e) => {
-        e.preventDefault();
-        isResizing = true;
-        setIframePointer(false);
+    header.addEventListener('mousedown', (e) => {
+      if(e.target.className !== "min-btn") initAction(e, 'dragging');
+    });
 
-        document.onmousemove = (e) => {
-            if (!isResizing) return;
-            
-            // Calculate new dimensions
-            const newWidth = e.clientX - chatWidget.offsetLeft;
-            const newHeight = e.clientY - chatWidget.offsetTop;
-
-            // Apply with smooth transitions
-            if (newWidth > 200) chatWidget.style.width = newWidth + "px";
-            if (newHeight > 100) chatWidget.style.height = newHeight + "px";
-        };
-
-        document.onmouseup = () => {
-            isResizing = false;
-            setIframePointer(true);
-            document.onmousemove = null;
-        };
-    };
+    handle.addEventListener('mousedown', (e) => {
+      e.preventDefault();
+      initAction(e, 'resizing');
+    });
 
     window.onload = loadGames;
-</script>
+  </script>
 </body>
 </html>
