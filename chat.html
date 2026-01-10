@@ -41,7 +41,7 @@
       cursor: pointer; font-weight: bold; font-size: 12px; display: none; margin-left: 5px;
     }
     #clearBtn { background: #ff4444; }
-    #kickBtn { background: #ff8800; }
+    #kickBtn { background: #ff8800; } /* now BAN button */
     #settingsBtn { background: #333; }
     #memberListBtn { background: #2196f3; }
     
@@ -194,7 +194,7 @@
     <button id="themeToggle" onclick="toggleTheme()">🌙</button>
     
     <button id="clearBtn" class="admin-btn" onclick="clearAllMessages()">CLEAR</button>
-    <button id="kickBtn" class="admin-btn" onclick="openKickModal()">KICK</button>
+    <button id="kickBtn" class="admin-btn" onclick="openKickModal()">BAN</button>
     <button id="settingsBtn" class="admin-btn" onclick="openSettings()">⚙</button>
     <button id="memberListBtn" class="admin-btn" onclick="toggleMemberList()">👥</button>
     
@@ -273,8 +273,8 @@
             <div class="member-status online" style="font-size: 12px;">● Online</div>
           </div>
           ${isAdmin ? `<div class="member-controls">
-            <button class="ban-btn" onclick="toggleBan('${uid}', false)">BAN</button>
-            <button class="kick-btn" onclick="kickUser('${uid}')">KICK</button>
+            <button class="ban-btn" onclick="toggleMute('${uid}', false)">MUTE</button>
+            <button class="kick-btn" onclick="banUser('${uid}')">BAN</button>
           </div>` : ''}
         `;
         content.appendChild(div);
@@ -284,16 +284,18 @@
     }
 
     // Admin Controls
-    window.kickUser = (uid) => {
-      if (confirm("Kick this user?")) {
-        update(ref(database, `users/${uid}`), { kicked: true });
-        remove(ref(database, `online/${uid}`));
+    // "Mute" = cannot send messages (isBanned flag)
+    window.toggleMute = (targetUid, isCurrentlyMuted) => {
+      if (confirm(isCurrentlyMuted ? "Unmute user?" : "Mute user?")) {
+        update(ref(database, `users/${targetUid}`), { isBanned: !isCurrentlyMuted });
       }
     };
 
-    window.toggleBan = (targetUid, isCurrentlyBanned) => {
-      if (confirm(isCurrentlyBanned ? "Unban user?" : "Ban user?")) {
-        update(ref(database, `users/${targetUid}`), { isBanned: !isCurrentlyBanned });
+    // "Ban" = force user out (kicked flag)
+    window.banUser = (uid) => {
+      if (confirm("Ban this user from the chat?")) {
+        update(ref(database, `users/${uid}`), { kicked: true });
+        remove(ref(database, `online/${uid}`));
       }
     };
 
@@ -399,14 +401,14 @@
         if (isAdmin && !isOwn) {
           userSpan.classList.add("admin-viewable");
           get(child(dbRef, `users/${msg.userId}/isBanned`)).then(s => {
-            const banned = s.val() === true;
+            const muted = s.val() === true;
             const tool = document.createElement("span");
             tool.className = "admin-tooltip";
             tool.innerHTML = `${msg.email}<br>
-              <button class="ban-btn" onclick="event.stopPropagation(); toggleBan('${msg.userId}', ${banned})">
-                ${banned ? 'UNBAN' : 'BAN'}
+              <button class="ban-btn" onclick="event.stopPropagation(); toggleMute('${msg.userId}', ${muted})">
+                ${muted ? 'UNMUTE' : 'MUTE'}
               </button>
-              <button class="kick-btn" onclick="event.stopPropagation(); kickUser('${msg.userId}')">KICK</button>`;
+              <button class="kick-btn" onclick="event.stopPropagation(); banUser('${msg.userId}')">BAN</button>`;
             userSpan.appendChild(tool);
           });
         }
@@ -451,9 +453,9 @@
         isAdmin = data.isAdmin === true;
         isBanned = data.isBanned === true;
 
-        // handle kicked (non-admin only)
+        // handle banned-from-room (kicked) non-admin
         if (data.kicked && !isAdmin) {
-          alert("You were kicked from the chat.");
+          alert("You were banned from the chat.");
           updateOnlineStatus(false);
           signOut(auth).finally(() => {
             window.location.href = 'index.html';
@@ -464,14 +466,14 @@
         document.getElementById("headerUsername").textContent = currentUsername;
         document.getElementById("userAvatar").textContent = currentUsername.charAt(0).toUpperCase();
 
-        // Admin-only buttons (member list is visible for everyone)
+        // Admin-only buttons (member list visible for everyone)
         ['clearBtn', 'kickBtn', 'settingsBtn'].forEach(id => {
           document.getElementById(id).style.display = isAdmin ? "block" : "none";
         });
         document.getElementById('memberListBtn').style.display = "block";
 
         document.getElementById("messageInput").disabled = isBanned;
-        if (isBanned) document.getElementById("messageInput").placeholder = "BANNED";
+        if (isBanned) document.getElementById("messageInput").placeholder = "MUTED";
 
         // Sync theme
         if (data.appearance === 'dark') {
