@@ -111,7 +111,7 @@
     <button style="background:#0084ff; color:white; border:none; border-radius:50%; width:50px; height:50px; cursor:pointer; font-size:20px;" onclick="sendMsg()">➤</button>
   </div>
 
-  <script type="module">
+<script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
     import { getDatabase, ref, push, remove, set, update, onChildAdded, onValue, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
@@ -133,19 +133,16 @@
 
     let currentUser = null, currentUsername = "", isAdmin = false;
     let localStream = null, pc = null;
-
-    // --- GLOBAL TURN SERVERS (No Credit Card Required) ---
+    
     const servers = {
       iceServers: [
         { urls: "stun:stun.l.google.com:19302" },
-        { urls: "stun:stun.relay.metered.ca:80" },
         { urls: "turn:openrelay.metered.ca:80", username: "openrelayproject", credential: "openrelayproject" },
         { urls: "turn:openrelay.metered.ca:443", username: "openrelayproject", credential: "openrelayproject" }
-      ],
-      iceCandidatePoolSize: 10
+      ]
     };
 
-    // --- AUTH & USER PRESENCE ---
+    // --- AUTH & PRESENCE ---
     onAuthStateChanged(auth, (user) => {
       if (!user) { location.href = 'index.html'; return; }
       currentUser = user;
@@ -176,13 +173,7 @@
     window.sendMsg = () => {
       const val = document.getElementById("messageInput").value.trim();
       if (!val) return;
-      push(ref(database, 'messages'), { 
-        text: val, 
-        userId: currentUser.uid, 
-        name: currentUsername, 
-        timestamp: serverTimestamp(), 
-        adminMsg: isAdmin 
-      });
+      push(ref(database, 'messages'), { text: val, userId: currentUser.uid, name: currentUsername, timestamp: serverTimestamp(), adminMsg: isAdmin });
       document.getElementById("messageInput").value = "";
     };
 
@@ -191,32 +182,28 @@
       const div = document.createElement("div");
       div.className = `message ${d.userId === currentUser.uid ? 'own' : 'other'}`;
       if (d.adminMsg) div.classList.add('admin-gradient');
-      div.innerHTML = `<small style="display:block; font-size:10px; margin-bottom:2px;">${d.name}</small>${d.text}`;
+      div.innerHTML = `<small style="display:block; font-size:10px; opacity:0.8;">${d.name}</small>${d.text}`;
       document.getElementById("chatBox").appendChild(div);
       document.getElementById("chatBox").scrollTop = document.getElementById("chatBox").scrollHeight;
     });
 
     window.clearAll = () => { if(confirm("Clear chat?")) set(ref(database, 'messages'), null); };
 
-    // --- WEBRTC VIDEO ENGINE ---
+    // --- WEBRTC ENGINE ---
     async function getMedia() {
-      try {
-        localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-        document.getElementById("localVideoPreview").srcObject = localStream;
-        return localStream;
-      } catch (e) { alert("Camera access denied!"); throw e; }
+      localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      document.getElementById("localVideoPreview").srcObject = localStream;
+      return localStream;
     }
 
     window.startCall = async (targetUid) => {
       document.getElementById("callOverlay").style.display = "flex";
       document.getElementById("callStatus").textContent = "Ringing...";
-      document.getElementById("acceptBtn").style.display = "none";
-      
       const stream = await getMedia();
-      pc = new RTCPeerConnection(servers);
       
+      pc = new RTCPeerConnection(servers);
       stream.getTracks().forEach(t => pc.addTrack(t, stream));
-      pc.ontrack = (e) => { document.getElementById("remoteVideo").srcObject = e.streams[0]; };
+      pc.ontrack = (e) => document.getElementById("remoteVideo").srcObject = e.streams[0];
 
       pc.onicecandidate = (e) => {
         if (e.candidate) push(ref(database, `calls/${targetUid}/candidates`), e.candidate.toJSON());
@@ -225,33 +212,32 @@
       const offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
 
-      await set(ref(database, `calls/${targetUid}`), { 
+      const callRef = ref(database, `calls/${targetUid}`);
+      await set(callRef, { 
         offer: { type: offer.type, sdp: offer.sdp }, 
         from: currentUser.uid, 
         name: currentUsername 
       });
 
-      // Listen for Answer
-      onValue(ref(database, `calls/${targetUid}`), async (s) => {
+      // SIGNALING GUARD: Only set remote description if we are in 'have-local-offer' state
+      onValue(callRef, async (s) => {
         const data = s.val();
-        if (data?.answer && !pc.currentRemoteDescription) {
+        if (data?.answer && pc.signalingState === "have-local-offer") {
           await pc.setRemoteDescription(new RTCSessionDescription(data.answer));
           document.getElementById("callStatus").textContent = "Connected";
         }
       });
 
-      // Listen for network paths (ICE)
       onChildAdded(ref(database, `calls/${currentUser.uid}/candidates`), (s) => {
-        if(pc && s.val()) pc.addIceCandidate(new RTCIceCandidate(s.val()));
+        if(pc && s.val()) pc.addIceCandidate(new RTCIceCandidate(s.val())).catch(e => {});
       });
     };
 
     function receiveCall(data) {
       document.getElementById("callOverlay").style.display = "flex";
-      document.getElementById("callStatus").textContent = "Incoming Call...";
       document.getElementById("callerNameDisplay").textContent = data.name;
       document.getElementById("acceptBtn").style.display = "flex";
-      document.getElementById("ringtone").play();
+      try { document.getElementById("ringtone").play(); } catch(e) {}
     }
 
     window.answerCall = async () => {
@@ -260,7 +246,7 @@
       pc = new RTCPeerConnection(servers);
       
       stream.getTracks().forEach(t => pc.addTrack(t, stream));
-      pc.ontrack = (e) => { document.getElementById("remoteVideo").srcObject = e.streams[0]; };
+      pc.ontrack = (e) => document.getElementById("remoteVideo").srcObject = e.streams[0];
 
       pc.onicecandidate = (e) => {
         if (e.candidate) push(ref(database, `calls/${window.incomingCallData.from}/candidates`), e.candidate.toJSON());
@@ -275,7 +261,7 @@
       });
 
       onChildAdded(ref(database, `calls/${currentUser.uid}/candidates`), (s) => {
-        if(pc && s.val()) pc.addIceCandidate(new RTCIceCandidate(s.val()));
+        if(pc && s.val()) pc.addIceCandidate(new RTCIceCandidate(s.val())).catch(e => {});
       });
 
       document.getElementById("callStatus").textContent = "Connected";
@@ -287,10 +273,8 @@
       if (pc) { pc.close(); pc = null; }
       remove(ref(database, `calls/${currentUser.uid}`));
       document.getElementById("callOverlay").style.display = "none";
-      document.getElementById("ringtone").pause();
     };
 
-    // --- UI CONTROLS ---
     window.toggleTheme = () => document.body.classList.toggle('dark-mode');
     window.toggleList = () => document.getElementById("memberList").classList.toggle("open");
     
@@ -306,6 +290,6 @@
         cont.appendChild(div);
       });
     });
-  </script>
+</script>
 </body>
 </html>
