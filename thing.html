@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Firebase Auth</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: Arial, sans-serif;
+      background: #f5f5f5;
+    }
+    .header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 60px;
+      background: white;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      display: flex;
+      align-items: center;
+      padding: 0 20px;
+      z-index: 100;
+    }
+    .hamburger {
+      width: 30px;
+      height: 30px;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-around;
+    }
+    .hamburger span {
+      width: 100%;
+      height: 3px;
+      background: #333;
+      border-radius: 2px;
+      transition: background 0.3s;
+    }
+    body.dark-mode .hamburger span {
+      background: white;
+    }
+    .user-info {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .avatar {
+      width: 35px;
+      height: 35px;
+      border-radius: 50%;
+      background: #4285f4;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: bold;
+    }
+    .sidebar {
+      position: fixed;
+      top: 0;
+      left: -280px;
+      width: 280px;
+      height: 100vh;
+      background: white;
+      box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+      transition: left 0.3s;
+      z-index: 200;
+      display: flex;
+      flex-direction: column;
+    }
+    .sidebar.open {
+      left: 0;
+    }
+    .sidebar-header {
+      padding: 20px;
+      background: #4285f4;
+      color: white;
+      font-size: 24px;
+      font-weight: bold;
+    }
+    .nav-items {
+      flex: 1;
+      padding: 20px 0;
+    }
+    .nav-item {
+      padding: 15px 25px;
+      cursor: pointer;
+      transition: background 0.2s;
+      font-size: 18px;
+    }
+    .nav-item:hover {
+      background: #f5f5f5;
+    }
+    .sidebar-footer {
+      padding: 20px;
+      border-top: 1px solid #ddd;
+    }
+    .footer-btn {
+      width: 100%;
+      padding: 12px;
+      margin: 5px 0;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    .settings-btn {
+      background: #666;
+      color: white;
+    }
+    .settings-btn:hover {
+      background: #555;
+    }
+    .logout-btn {
+      background: #ea4335;
+      color: white;
+    }
+    .logout-btn:hover {
+      background: #d33426;
+    }
+    .overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s;
+      z-index: 150;
+    }
+    .overlay.active {
+      opacity: 1;
+      pointer-events: all;
+    }
+    .container {
+      max-width: 400px;
+      margin: 100px auto 50px;
+      padding: 20px;
+    }
+    .auth-box {
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    h2 {
+      margin-top: 0;
+      margin-bottom: 20px;
+      color: #333;
+    }
+    input {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+    button {
+      width: 100%;
+      padding: 12px;
+      margin: 5px 0;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    .primary {
+      background: #4285f4;
+      color: white;
+    }
+    .primary:hover {
+      background: #357ae8;
+    }
+    .secondary {
+      background: #34a853;
+      color: white;
+    }
+    .secondary:hover {
+      background: #2d9248;
+    }
+    #status {
+      margin-bottom: 20px;
+      padding: 10px;
+      background: #e8f0fe;
+      border-radius: 4px;
+      text-align: center;
+    }
+    .main-content {
+      padding: 40px 20px;
+    }
+    body.dark-mode {
+      background: #1a1a1a;
+    }
+    body.dark-mode .auth-box,
+    body.dark-mode .header {
+      background: #2c2c2c;
+      color: white;
+    }
+    body.dark-mode .sidebar {
+      background: #2c2c2c;
+    }
+    body.dark-mode .nav-item:hover {
+      background: #3a3a3a;
+    }
+    body.dark-mode .nav-item {
+      color: white;
+    }
+    body.dark-mode .sidebar-header {
+      background: #1a1a1a;
+    }
+    body.dark-mode .sidebar-footer {
+      border-top-color: #444;
+    }
+    body.dark-mode .settings-section {
+      background: #2c2c2c;
+    }
+    body.dark-mode .settings-title {
+      background: #2c2c2c;
+    }
+    body.dark-mode .settings-item {
+      border-bottom-color: #444;
+    }
+    body.dark-mode .section-title,
+    body.dark-mode .settings-label,
+    body.dark-mode .settings-value {
+      color: #ddd;
+    }
+    body.dark-mode .edit-btn {
+      background: #444;
+      color: white;
+    }
+    body.dark-mode .edit-btn:hover {
+      background: #555;
+    }
+    body.dark-mode .toggle-option {
+      background: #444;
+      color: white;
+      border-color: #444;
+    }
+    body.dark-mode .toggle-option.active {
+      border-color: #4285f4;
+      background: #357ae8;
+    }
+    body.dark-mode input {
+      background: #444;
+      color: white;
+      border-color: #555;
+    }
+    body.dark-mode #status {
+      background: #444;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <div class="header" id="header" style="display: none;">
+    <div class="hamburger" onclick="toggleSidebar()">
+      <span></span>
+      <span></span>
+      <span></span>
+    </div>
+    <div class="user-info">
+      <div class="avatar" id="userAvatar">U</div>
+      <span id="headerUsername">Username</span>
+    </div>
+  </div>
+
+  <!-- Sidebar -->
+  <div class="sidebar" id="sidebar">
+    <div class="sidebar-header">Menu</div>
+    <div class="nav-items">
+      <div class="nav-item" onclick="navigateTo('home')">🏠 Home</div>
+      <div class="nav-item" onclick="navigateTo('chat')">💬 Chat</div>
+      <div class="nav-item" onclick="navigateTo('games')">🎮 Games</div>
+      <div class="nav-item" onclick="navigateTo('movies')">🎬 Movies</div>
+      <div class="nav-item" onclick="navigateTo('web')">🌐 Web</div>
+    </div>
+    <div class="sidebar-footer">
+      <button class="footer-btn settings-btn" onclick="openSettings()">⚙️ Settings</button>
+      <button class="footer-btn logout-btn" onclick="logout()">🚪 Logout</button>
+    </div>
+  </div>
+
+  <!-- Overlay -->
+  <div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
+
+  <!-- Main Container -->
+  <div class="container">
+    <div id="auth">
+      <div class="auth-box">
+        <h2>Authentication</h2>
+        <input type="email" id="email" placeholder="Email" />
+        <input type="password" id="password" placeholder="Password" />
+        <button class="primary" onclick="login()">Login</button>
+        <button class="secondary" onclick="register()">Register</button>
+      </div>
+    </div>
+    
+    <div id="content" style="display: none;">
+      <div class="auth-box">
+        <h2>Welcome!</h2>
+        <div id="status"></div>
+        <div class="main-content">
+          <p>You are now logged in. Use the menu to navigate.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+    import {
+      getAuth,
+      createUserWithEmailAndPassword,
+      signInWithEmailAndPassword,
+      onAuthStateChanged,
+      signOut
+    } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+    import {
+      getDatabase,
+      ref,
+      set,
+      get,
+      child
+    } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+    
+    const firebaseConfig = {
+      apiKey: "AIzaSyCN8ypq4TxhLwjseqnDJneBO2j_BlARz0M",
+      authDomain: "chat-or-somethig.firebaseapp.com",
+      databaseURL: "https://chat-or-somethig-default-rtdb.firebaseio.com",
+      projectId: "chat-or-somethig",
+      storageBucket: "chat-or-somethig.firebasestorage.app",
+      messagingSenderId: "598777875087",
+      appId: "1:598777875087:web:d100536dd269bc0a9d7efa",
+      measurementId: "G-VQQ0TYRNNH"
+    };
+    
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const database = getDatabase(app);
+    const dbRef = ref(database);
+    
+    const authBox = document.getElementById("auth");
+    const content = document.getElementById("content");
+    const status = document.getElementById("status");
+    const email = document.getElementById("email");
+    const password = document.getElementById("password");
+    const header = document.getElementById("header");
+    const sidebar = document.getElementById("sidebar");
+    const overlay = document.getElementById("overlay");
+    
+    let currentUser = null;
+    
+    // Load saved appearance on page load
+    async function loadAppearance(userId) {
+      if (!userId) return;
+      try {
+        const snapshot = await get(child(dbRef, `users/${userId}/appearance`));
+        if (snapshot.exists() && snapshot.val() === 'dark') {
+          document.body.classList.add('dark-mode');
+        }
+      } catch (error) {
+        console.log('No saved appearance preference:', error);
+      }
+    }
+    
+    window.toggleSidebar = () => {
+      sidebar.classList.toggle("open");
+      overlay.classList.toggle("active");
+    };
+    
+    window.navigateTo = (page) => {
+      content.style.display = "block";
+      settingsPage.style.display = "none";
+      alert(`Navigating to ${page.charAt(0).toUpperCase() + page.slice(1)}`);
+      toggleSidebar();
+    };
+    
+    window.openSettings = () => {
+      window.location.href = 'settings.html';
+    };
+    
+    window.register = () => {
+      createUserWithEmailAndPassword(auth, email.value, password.value)
+        .then(async (userCredential) => {
+          // Save user data on registration
+          const user = userCredential.user;
+          const username = user.email.split('@')[0];
+          
+          try {
+            await set(ref(database, `users/${user.uid}`), {
+              email: user.email,
+              username: username,
+              appearance: 'light',
+              createdAt: new Date().toISOString()
+            });
+            console.log('User data saved successfully');
+          } catch (error) {
+            console.error('Failed to save user data:', error);
+          }
+        })
+        .catch(err => alert(err.message));
+    };
+    
+    window.login = () => {
+      signInWithEmailAndPassword(auth, email.value, password.value)
+        .catch(err => alert(err.message));
+    };
+    
+    window.logout = () => {
+      signOut(auth);
+      if (sidebar.classList.contains("open")) {
+        toggleSidebar();
+      }
+    };
+    
+    onAuthStateChanged(auth, async user => {
+      if (user) {
+        currentUser = user;
+        authBox.style.display = "none";
+        content.style.display = "block";
+        header.style.display = "flex";
+        status.textContent = "Logged in as " + user.email;
+        
+        // Load user data from Firebase
+        try {
+          const snapshot = await get(child(dbRef, `users/${user.uid}`));
+          if (snapshot.exists()) {
+            const userData = snapshot.val();
+            const username = userData.username || user.email.split('@')[0];
+            document.getElementById("headerUsername").textContent = username;
+            document.getElementById("userAvatar").textContent = username.charAt(0).toUpperCase();
+            
+            // Load appearance
+            if (userData.appearance === 'dark') {
+              document.body.classList.add('dark-mode');
+            }
+          } else {
+            // Fallback if no saved data - create initial data
+            const username = user.email.split('@')[0];
+            document.getElementById("headerUsername").textContent = username;
+            document.getElementById("userAvatar").textContent = username.charAt(0).toUpperCase();
+            
+            // Save initial data
+            await set(ref(database, `users/${user.uid}`), {
+              email: user.email,
+              username: username,
+              appearance: 'light',
+              createdAt: new Date().toISOString()
+            });
+          }
+        } catch (error) {
+          console.log('Could not load user data:', error);
+          // Fallback
+          const username = user.email.split('@')[0];
+          document.getElementById("headerUsername").textContent = username;
+          document.getElementById("userAvatar").textContent = username.charAt(0).toUpperCase();
+        }
+      } else {
+        currentUser = null;
+        authBox.style.display = "block";
+        content.style.display = "none";
+        header.style.display = "none";
+        status.textContent = "Please log in";
+      }
+    });
+  </script>
+</body>
+</html>
