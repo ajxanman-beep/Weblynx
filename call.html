@@ -3,86 +3,66 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Video Calling Hub</title>
+  <title>Video Call</title>
   <link rel="icon" href="data:,">
   <style>
-    /* --- THEME --- */
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f0f2f5; color: #1c1e21; transition: 0.3s; }
-    body.dark-mode { background: #121212; color: #e4e6eb; }
-
-    /* --- HEADER --- */
-    .header { height: 70px; background: white; display: flex; align-items: center; padding: 0 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); position: sticky; top: 0; z-index: 100; }
-    body.dark-mode .header { background: #1a1a1a; border-bottom: 1px solid #333; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; background: #18191a; color: white; overflow: hidden; }
     
-    .logo { font-weight: 800; font-size: 1.5rem; color: #4285f4; letter-spacing: -1px; }
-    .controls { margin-left: auto; display: flex; align-items: center; gap: 15px; }
-
-    /* --- MAIN GRID --- */
-    .container { max-width: 1000px; margin: 40px auto; padding: 0 20px; }
-    .hub-title { margin-bottom: 25px; font-size: 1.2rem; opacity: 0.7; font-weight: 500; }
+    .header { position: fixed; top: 0; width: 100%; height: 60px; background: #242526; display: flex; align-items: center; padding: 0 20px; z-index: 100; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }
     
-    #onlineGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
+    /* --- VIDEO CALL UI --- */
+    #callOverlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 2000; flex-direction: column; align-items: center; justify-content: center; color: white; }
+    .video-grid { display: flex; gap: 15px; width: 90%; max-width: 1200px; height: 70vh; position: relative; }
+    #remoteVideo { flex: 1; background: #000; border-radius: 15px; object-fit: cover; }
+    #localVideo { position: absolute; width: 220px; height: 165px; bottom: 20px; right: 20px; border: 3px solid #0084ff; border-radius: 12px; object-fit: cover; transform: scaleX(-1); box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+    .controls { margin-top: 30px; display: flex; gap: 20px; }
+    .btn-call { width: 60px; height: 60px; border-radius: 50%; border: none; cursor: pointer; font-size: 24px; transition: 0.2s; }
+    .btn-call:hover { transform: scale(1.1); }
     
-    .user-card { background: white; padding: 20px; border-radius: 16px; display: flex; align-items: center; gap: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.02); transition: 0.2s; border: 1px solid transparent; }
-    body.dark-mode .user-card { background: #1e1e1e; border-color: #333; }
-    .user-card:hover { transform: translateY(-3px); box-shadow: 0 10px 20px rgba(0,0,0,0.08); border-color: #4285f4; }
-
-    .avatar { width: 55px; height: 55px; border-radius: 50%; background: #4285f4; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.4rem; }
-    .user-info { flex: 1; }
-    .user-name { font-weight: 600; font-size: 1.1rem; }
-    .status-tag { font-size: 0.75rem; color: #31a24c; display: flex; align-items: center; gap: 4px; }
-    .status-tag::before { content: ""; width: 8px; height: 8px; background: #31a24c; border-radius: 50%; display: inline-block; }
-
-    .call-btn-large { background: #31a24c; color: white; border: none; padding: 10px 18px; border-radius: 10px; cursor: pointer; font-weight: bold; transition: 0.2s; }
-    .call-btn-large:hover { background: #2b8a41; }
-
-    /* --- CALL OVERLAY --- */
-    #callOverlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 2000; flex-direction: column; align-items: center; justify-content: center; }
-    .video-container { width: 90%; max-width: 1100px; height: 70vh; display: flex; gap: 20px; position: relative; }
-    #remoteVideo { flex: 1; background: #000; border-radius: 20px; object-fit: cover; }
-    #localVideo { position: absolute; width: 240px; height: 180px; bottom: 20px; right: 20px; border: 3px solid #4285f4; border-radius: 15px; transform: scaleX(-1); object-fit: cover; }
-    .call-actions { margin-top: 30px; display: flex; gap: 25px; }
-    .circle-btn { width: 70px; height: 70px; border-radius: 50%; border: none; cursor: pointer; font-size: 1.8rem; display: flex; align-items: center; justify-content: center; }
+    /* --- MEMBER LIST --- */
+    #memberList { position: fixed; right: -320px; top: 60px; width: 300px; bottom: 0; background: #242526; transition: 0.3s; padding: 20px; z-index: 99; box-shadow: -2px 0 10px rgba(0,0,0,0.3); overflow-y: auto; }
+    #memberList.open { right: 0; }
+    #memberList h3 { margin-bottom: 20px; color: #e4e6eb; }
+    
+    .user-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; margin-bottom: 10px; background: #3a3b3c; border-radius: 10px; }
+    .call-btn { background: #0084ff; color: white; border: none; padding: 8px 15px; border-radius: 20px; cursor: pointer; font-size: 18px; }
+    .call-btn:hover { background: #0066cc; }
+    
+    button { background: #3a3b3c; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; }
+    button:hover { background: #4a4b4c; }
   </style>
 </head>
 <body>
 
-  <div class="header">
-    <div class="logo">CALL HUB</div>
-    <div class="controls">
-      <button onclick="document.body.classList.toggle('dark-mode')" style="background:none; border:none; cursor:pointer; font-size:1.5rem;">🌓</button>
-      <div id="myProfile" style="display:flex; align-items:center; gap:10px;">
-        <span id="myName" style="font-weight:600;">Loading...</span>
-        <div class="avatar" id="myAvatar" style="width:40px; height:40px; font-size:1rem;">?</div>
-      </div>
-    </div>
-  </div>
-
-  <div class="container">
-    <p class="hub-title">PEOPLE ONLINE</p>
-    <div id="onlineGrid">
-      </div>
-  </div>
-
   <div id="callOverlay">
-    <h1 id="callStatus" style="color:white; margin-bottom:20px; font-weight:400;">Connecting...</h1>
-    <div class="video-container">
+    <h2 id="callStatus">Connecting...</h2>
+    <div class="video-grid">
       <video id="remoteVideo" autoplay playsinline></video>
       <video id="localVideo" autoplay playsinline muted></video>
     </div>
-    <div class="call-actions">
-      <button id="acceptBtn" class="circle-btn" style="background:#31a24c; color:white;" onclick="answerCall()">📞</button>
-      <button class="circle-btn" style="background:#fa3e3e; color:white;" onclick="hangUp()">🚫</button>
+    <div class="controls">
+      <button id="acceptBtn" class="btn-call" style="background:#31a24c; display:none;" onclick="answerCall()">📞</button>
+      <button class="btn-call" style="background:#fa3e3e;" onclick="hangUp()">🚫</button>
     </div>
   </div>
 
-  <audio id="ringtone" src="https://assets.mixkit.co/active_storage/sfx/1359/1359-preview.mp3" loop></audio>
+  <div class="header">
+    <button onclick="toggleList()">👥 Online Users</button>
+    <div style="margin-left: auto; display: flex; align-items: center; gap: 10px;">
+      <span id="uName">User</span>
+    </div>
+  </div>
+
+  <div id="memberList">
+    <h3>Online Users</h3>
+    <div id="onlineUsers"></div>
+  </div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
-    import { getDatabase, ref, set, onValue, remove, push, update, onChildAdded } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+    import { getDatabase, ref, push, set, onValue, remove, update, onChildAdded } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCN8ypq4TxhLwjseqnDJneBO2j_BlARz0M",
@@ -101,57 +81,35 @@
 
     let currentUser = null, currentUsername = "";
     let localStream = null, pc = null;
-    const servers = { iceServers: [{ urls: "stun:stun.l.google.com:19302" }, { urls: "turn:openrelay.metered.ca:80", username: "openrelayproject", credential: "openrelayproject" }] };
+
+    const servers = {
+      iceServers: [
+        { urls: "stun:stun.l.google.com:19302" },
+        { urls: "turn:openrelay.metered.ca:80", username: "openrelayproject", credential: "openrelayproject" }
+      ]
+    };
 
     onAuthStateChanged(auth, (user) => {
       if (!user) { location.href = 'index.html'; return; }
       currentUser = user;
       currentUsername = user.email.split('@')[0];
-      document.getElementById("myName").textContent = currentUsername;
-      document.getElementById("myAvatar").textContent = currentUsername[0].toUpperCase();
+      document.getElementById("uName").textContent = currentUsername;
 
-      // Presence
-      const myPresence = ref(database, `online/${user.uid}`);
-      set(myPresence, { name: currentUsername, uid: user.uid });
-      onDisconnect(myPresence).remove();
-
-      // Listen for calls
+      set(ref(database, `online/${user.uid}`), { name: currentUsername });
+      
+      // Listen for incoming calls
       onValue(ref(database, `calls/${user.uid}`), (snap) => {
         const data = snap.val();
         if (data && data.offer && !pc) {
           window.incomingCallData = data;
           document.getElementById("callOverlay").style.display = "flex";
-          document.getElementById("callStatus").textContent = "Incoming: " + data.name;
-          document.getElementById("acceptBtn").style.display = "flex";
-          document.getElementById("ringtone").play().catch(e => {});
-        } else if (!data && pc) {
-          hangUp();
+          document.getElementById("callStatus").textContent = "Incoming Call from " + data.name;
+          document.getElementById("acceptBtn").style.display = "block";
         }
       });
     });
 
-    // --- GRID SYNC ---
-    onValue(ref(database, 'online'), (s) => {
-      const users = s.val() || {};
-      const grid = document.getElementById("onlineGrid");
-      grid.innerHTML = "";
-      Object.keys(users).forEach(uid => {
-        if(uid === currentUser.uid) return;
-        const card = document.createElement("div");
-        card.className = "user-card";
-        card.innerHTML = `
-          <div class="avatar">${users[uid].name[0].toUpperCase()}</div>
-          <div class="user-info">
-            <div class="user-name">${users[uid].name}</div>
-            <div class="status-tag">Online</div>
-          </div>
-          <button class="call-btn-large" onclick="startCall('${uid}')">Call</button>
-        `;
-        grid.appendChild(card);
-      });
-    });
-
-    // --- VIDEO ENGINE ---
+    // --- VIDEO CALL ENGINE ---
     async function startMedia() {
       localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
       document.getElementById("localVideo").srcObject = localStream;
@@ -159,26 +117,27 @@
 
     window.startCall = async (targetUid) => {
       document.getElementById("callOverlay").style.display = "flex";
-      document.getElementById("callStatus").textContent = "Ringing...";
+      document.getElementById("callStatus").textContent = "Calling...";
       document.getElementById("acceptBtn").style.display = "none";
       await startMedia();
 
       pc = new RTCPeerConnection(servers);
       localStream.getTracks().forEach(t => pc.addTrack(t, localStream));
       pc.ontrack = (e) => document.getElementById("remoteVideo").srcObject = e.streams[0];
+      
       pc.onicecandidate = (e) => {
         if(e.candidate) push(ref(database, `calls/${targetUid}/candidates`), e.candidate.toJSON());
       };
 
       const offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
-      
+
       const callRef = ref(database, `calls/${targetUid}`);
       set(callRef, { offer: { type: offer.type, sdp: offer.sdp }, name: currentUsername, from: currentUser.uid });
 
       onValue(callRef, async (s) => {
         const data = s.val();
-        if (data?.answer && pc?.signalingState === "have-local-offer") {
+        if (data?.answer && pc && pc.signalingState === "have-local-offer") {
           await pc.setRemoteDescription(new RTCSessionDescription(data.answer));
           document.getElementById("callStatus").textContent = "Connected";
         }
@@ -186,11 +145,11 @@
     };
 
     window.answerCall = async () => {
-      document.getElementById("ringtone").pause();
       await startMedia();
       pc = new RTCPeerConnection(servers);
       localStream.getTracks().forEach(t => pc.addTrack(t, localStream));
       pc.ontrack = (e) => document.getElementById("remoteVideo").srcObject = e.streams[0];
+
       pc.onicecandidate = (e) => {
         if(e.candidate) push(ref(database, `calls/${window.incomingCallData.from}/candidates`), e.candidate.toJSON());
       };
@@ -198,6 +157,7 @@
       await pc.setRemoteDescription(new RTCSessionDescription(window.incomingCallData.offer));
       const answer = await pc.createAnswer();
       await pc.setLocalDescription(answer);
+
       update(ref(database, `calls/${currentUser.uid}`), { answer: { type: answer.type, sdp: answer.sdp } });
       
       onChildAdded(ref(database, `calls/${currentUser.uid}/candidates`), (s) => {
@@ -213,8 +173,23 @@
       if(pc) { pc.close(); pc = null; }
       remove(ref(database, `calls/${currentUser.uid}`));
       document.getElementById("callOverlay").style.display = "none";
-      document.getElementById("ringtone").pause();
     };
+
+    // --- UI TOOLS ---
+    window.toggleList = () => document.getElementById("memberList").classList.toggle("open");
+    
+    onValue(ref(database, 'online'), (s) => {
+      const users = s.val() || {};
+      const cont = document.getElementById("onlineUsers");
+      cont.innerHTML = "";
+      Object.keys(users).forEach(uid => {
+        if(uid === currentUser.uid) return;
+        const div = document.createElement("div");
+        div.className = "user-item";
+        div.innerHTML = `<span>${users[uid].name}</span> <button class="call-btn" onclick="startCall('${uid}')">📞 Call</button>`;
+        cont.appendChild(div);
+      });
+    });
   </script>
 </body>
 </html>
