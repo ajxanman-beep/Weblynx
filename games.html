@@ -85,33 +85,50 @@
 
   <script src="games.js"></script>
 
-  <script>
+<div class="game-container" id="gameGrid">
+    </div>
+
+<script>
     // Sidebar logic
     function toggleSidebar() {
-      document.getElementById("sidebar").classList.toggle("open");
-      document.getElementById("overlay").classList.toggle("active");
+        document.getElementById("sidebar").classList.toggle("open");
+        document.getElementById("overlay").classList.toggle("active");
     }
 
-    // Dynamic Loading Logic
-    const grid = document.getElementById('gameGrid');
+    // JSON Loading Logic
+    async function loadGames() {
+        const grid = document.getElementById('gameGrid');
+        
+        try {
+            // Fetch the JSON file
+            const response = await fetch('games.json');
+            
+            if (!response.ok) {
+                throw new Error('Could not load games.json');
+            }
 
-    // Assuming games.js provides a 'games' variable
-    // Example format: const games = [{title: "pacman", url: "games/pacman.html"}];
-    function loadGames() {
-        if (typeof games !== 'undefined') {
+            const games = await response.json();
+
+            // Clear the grid and inject games
+            grid.innerHTML = ''; 
+            
             games.forEach(game => {
                 const btn = document.createElement('a');
                 btn.href = game.url;
                 btn.className = 'game-card';
-                btn.innerText = game.title || 'game';
+                // Using game.title or game.name depending on your JSON keys
+                btn.innerText = (game.title || game.name || 'game').toLowerCase();
                 grid.appendChild(btn);
             });
-        } else {
-            grid.innerHTML = "<p>No games found in games.js</p>";
+
+        } catch (error) {
+            console.error('Error:', error);
+            grid.innerHTML = `<p style="color: red;">Error loading games list.</p>`;
         }
     }
 
+    // Run the function when the page loads
     window.onload = loadGames;
-  </script>
+</script>
 </body>
 </html>
