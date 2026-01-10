@@ -7,7 +7,7 @@
   <style>
     /* --- THEME & BASE --- */
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f5f5; color: #333; overflow: hidden; transition: 0.3s; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; background: #f5f5f5; color: #333; overflow: hidden; transition: 0.3s; }
     body.dark-mode { background: #121212; color: white; }
 
     /* --- HEADER --- */
@@ -19,25 +19,24 @@
     /* --- ADMIN BUTTONS --- */
     .admin-btn { padding: 8px 12px; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 12px; display: none; margin-left: 5px; }
     #clearBtn { background: #ea4335; }
-    #settingsBtn { background: #333; }
 
     .user-info { margin-left: auto; display: flex; align-items: center; gap: 10px; }
     .avatar { width: 35px; height: 35px; border-radius: 50%; background: #4285f4; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; }
 
-    /* --- CHAT BOX & MESSAGES --- */
+    /* --- CHAT BOX --- */
     #chatBox { position: absolute; top: 60px; left: 0; right: 0; bottom: 90px; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
-    .message { padding: 10px 15px; border-radius: 12px; max-width: 75%; position: relative; animation: fadeIn 0.3s ease; }
+    .message { padding: 10px 15px; border-radius: 12px; max-width: 75%; position: relative; animation: fadeIn 0.2s ease; }
     .message.own { background: #4285f4; color: white; margin-left: auto; border-bottom-right-radius: 2px; }
     .message.other { background: #e0e0e0; color: #222; margin-right: auto; border-bottom-left-radius: 2px; }
     body.dark-mode .message.other { background: #2c2c2c; color: white; }
 
-    /* Admin Gradient Bubble */
+    /* Admin Gradient */
     .message.admin-gradient {
       background: linear-gradient(135deg, #667eea, #764ba2, #f093fb);
       background-size: 200% 200%; color: white;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      animation: gradShift 5s infinite alternate;
     }
-    .animate-gradient { animation: gradShift 5s infinite alternate; }
     @keyframes gradShift { 0% {background-position: 0% 50%} 100% {background-position: 100% 50%} }
 
     /* --- VIDEO CALL OVERLAY --- */
@@ -72,8 +71,8 @@
 <body>
 
   <div id="callOverlay">
-    <h2 id="callStatus" style="margin-bottom: 10px;">Incoming Call</h2>
-    <p id="callerName" style="margin-bottom: 20px;"></p>
+    <h2 id="callStatus" style="margin-bottom: 10px;">Call Progress</h2>
+    <p id="callerNameDisplay" style="margin-bottom: 20px;"></p>
     <div class="video-grid">
       <video id="remoteVideo" autoplay playsinline></video>
       <video id="localVideoPreview" autoplay playsinline muted></video>
@@ -89,8 +88,8 @@
   <div class="header">
     <button class="back-btn" onclick="location.href='index.html'">← Home</button>
     <button id="themeToggle" onclick="toggleTheme()">🌙</button>
-    <button id="clearBtn" class="admin-btn" onclick="clearAll()">CLEAR</button>
-    <button id="memberListBtn" style="margin-left:10px; padding:8px;" onclick="toggleList()">👥</button>
+    <button id="clearBtn" class="admin-btn" onclick="clearAll()">CLEAR ALL</button>
+    <button id="memberListBtn" style="margin-left:10px; padding:8px;" onclick="toggleList()">👥 Members</button>
     <div class="user-info">
       <div class="avatar" id="userAvatar">U</div>
       <span id="headerUsername">Username</span>
@@ -98,14 +97,14 @@
   </div>
 
   <div id="memberList">
-    <h3 style="margin-bottom:15px;">Who's Online</h3>
+    <h3 style="margin-bottom:15px;">Active Users</h3>
     <div id="onlineContent"></div>
   </div>
 
   <div id="chatBox"></div>
 
   <div id="messageInputBox">
-    <input id="messageInput" type="text" placeholder="Send a message..." onkeypress="if(event.key==='Enter') sendMsg()">
+    <input id="messageInput" type="text" placeholder="Type a message..." onkeypress="if(event.key==='Enter') sendMsg()">
     <button style="background:#4285f4; color:white; border:none; border-radius:25px; padding:0 25px; cursor:pointer;" onclick="sendMsg()">Send</button>
   </div>
 
@@ -130,10 +129,10 @@
     const database = getDatabase(app);
 
     let currentUser = null, currentUsername = "", isAdmin = false;
-    let localStream = null, pc = null, callRef = null;
+    let localStream = null, pc = null;
     const servers = { iceServers: [{ urls: ['stun:stun1.l.google.com:19302', 'stun:stun2.l.google.com:19302'] }] };
 
-    // --- 1. AUTH & USER SETUP ---
+    // --- AUTH & SETUP ---
     onAuthStateChanged(auth, (user) => {
       if (!user) { location.href = 'index.html'; return; }
       currentUser = user;
@@ -146,31 +145,47 @@
         document.getElementById("clearBtn").style.display = isAdmin ? "block" : "none";
       });
 
-      set(ref(database, `online/${user.uid}`), { name: currentUsername, status: "online" });
-      onValue(ref(database, `calls/${user.uid}`), (snap) => { if (snap.exists() && !pc) receiveCall(snap.val()); });
+      set(ref(database, `online/${user.uid}`), { name: currentUsername, isOnline: true });
+      
+      // Listen for incoming calls
+      onValue(ref(database, `calls/${user.uid}`), (snap) => {
+        const data = snap.val();
+        if (data && data.offer && !pc) { 
+          window.incomingCallData = data;
+          receiveCall(data); 
+        } else if (!data && pc) {
+          hangUp(); // Remote user cancelled
+        }
+      });
     });
 
-    // --- 2. CHAT & ADMIN LOGIC ---
+    // --- CHAT LOGIC ---
     window.sendMsg = () => {
       const val = document.getElementById("messageInput").value.trim();
       if (!val) return;
-      push(ref(database, 'messages'), { text: val, uid: currentUser.uid, name: currentUsername, time: serverTimestamp(), admin: isAdmin });
+      push(ref(database, 'messages'), { 
+        text: val, 
+        userId: currentUser.uid, 
+        name: currentUsername, 
+        timestamp: serverTimestamp(), 
+        adminMsg: isAdmin 
+      });
       document.getElementById("messageInput").value = "";
     };
 
     onChildAdded(ref(database, 'messages'), (s) => {
       const d = s.val();
       const div = document.createElement("div");
-      div.className = `message ${d.uid === currentUser.uid ? 'own' : 'other'}`;
-      if (d.admin) div.classList.add('admin-gradient', 'animate-gradient');
-      div.innerHTML = `<small style="display:block; font-size:10px; margin-bottom:4px;">${d.name}</small>${d.text}`;
+      div.className = `message ${d.userId === currentUser.uid ? 'own' : 'other'}`;
+      if (d.adminMsg) div.classList.add('admin-gradient');
+      div.innerHTML = `<small style="display:block; font-size:10px; opacity:0.8;">${d.name}</small>${d.text}`;
       document.getElementById("chatBox").appendChild(div);
       document.getElementById("chatBox").scrollTop = document.getElementById("chatBox").scrollHeight;
     });
 
-    window.clearAll = () => { if(confirm("Clear chat?")) set(ref(database, 'messages'), null); };
+    window.clearAll = () => { if(confirm("Clear all messages?")) set(ref(database, 'messages'), null); };
 
-    // --- 3. FULL WEBRTC CALLING LOGIC ---
+    // --- WEBRTC CORE ---
     async function setupMedia() {
       localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
       document.getElementById("localVideoPreview").srcObject = localStream;
@@ -180,60 +195,91 @@
     window.startCall = async (targetUid) => {
       document.getElementById("callOverlay").style.display = "flex";
       document.getElementById("callStatus").textContent = "Ringing...";
-      const stream = await setupMedia();
+      document.getElementById("acceptBtn").style.display = "none";
       
+      const stream = await setupMedia();
       pc = new RTCPeerConnection(servers);
       stream.getTracks().forEach(t => pc.addTrack(t, stream));
       pc.ontrack = (e) => document.getElementById("remoteVideo").srcObject = e.streams[0];
 
+      // Exchange network candidates
+      pc.onicecandidate = (e) => {
+        if (e.candidate) {
+          push(ref(database, `calls/${targetUid}/candidates`), e.candidate.toJSON());
+        }
+      };
+
       const offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
 
-      callRef = ref(database, `calls/${targetUid}`);
-      await set(callRef, { type: 'offer', sdp: offer.sdp, from: currentUser.uid, name: currentUsername });
+      const callRef = ref(database, `calls/${targetUid}`);
+      await set(callRef, { 
+        offer: { type: offer.type, sdp: offer.sdp }, 
+        from: currentUser.uid, 
+        name: currentUsername 
+      });
 
-      // Listen for Answer
+      // Watch for Answer and Candidates
       onValue(callRef, async (s) => {
         const data = s.val();
-        if (data?.type === 'answer') {
-          await pc.setRemoteDescription(new RTCSessionDescription(data));
+        if (data?.answer && !pc.currentRemoteDescription) {
+          await pc.setRemoteDescription(new RTCSessionDescription(data.answer));
           document.getElementById("callStatus").textContent = "Connected";
         }
       });
+      
+      onChildAdded(ref(database, `calls/${currentUser.uid}/candidates`), (s) => {
+        pc.addIceCandidate(new RTCIceCandidate(s.val()));
+      });
     };
 
-    async function receiveCall(data) {
+    function receiveCall(data) {
       document.getElementById("callOverlay").style.display = "flex";
-      document.getElementById("callerName").textContent = data.name;
+      document.getElementById("callStatus").textContent = "Incoming Call...";
+      document.getElementById("callerNameDisplay").textContent = data.name;
+      document.getElementById("acceptBtn").style.display = "flex";
       document.getElementById("ringtone").play();
-      window.incomingCallData = data;
     }
 
     window.answerCall = async () => {
       document.getElementById("ringtone").pause();
       const stream = await setupMedia();
+      
       pc = new RTCPeerConnection(servers);
       stream.getTracks().forEach(t => pc.addTrack(t, stream));
       pc.ontrack = (e) => document.getElementById("remoteVideo").srcObject = e.streams[0];
 
-      await pc.setRemoteDescription(new RTCSessionDescription(window.incomingCallData));
+      pc.onicecandidate = (e) => {
+        if (e.candidate) {
+          push(ref(database, `calls/${window.incomingCallData.from}/candidates`), e.candidate.toJSON());
+        }
+      };
+
+      await pc.setRemoteDescription(new RTCSessionDescription(window.incomingCallData.offer));
       const answer = await pc.createAnswer();
       await pc.setLocalDescription(answer);
       
-      update(ref(database, `calls/${currentUser.uid}`), { type: 'answer', sdp: answer.sdp });
+      await update(ref(database, `calls/${currentUser.uid}`), {
+        answer: { type: answer.type, sdp: answer.sdp }
+      });
+
+      onChildAdded(ref(database, `calls/${currentUser.uid}/candidates`), (s) => {
+        pc.addIceCandidate(new RTCIceCandidate(s.val()));
+      });
+
       document.getElementById("callStatus").textContent = "Connected";
       document.getElementById("acceptBtn").style.display = "none";
     };
 
     window.hangUp = () => {
       if (localStream) localStream.getTracks().forEach(t => t.stop());
-      if (pc) pc.close();
-      pc = null;
+      if (pc) { pc.close(); pc = null; }
       remove(ref(database, `calls/${currentUser.uid}`));
-      location.reload(); // Quick reset
+      document.getElementById("callOverlay").style.display = "none";
+      document.getElementById("ringtone").pause();
     };
 
-    // --- 4. UI HELPERS ---
+    // --- UI HELPERS ---
     window.toggleTheme = () => document.body.classList.toggle('dark-mode');
     window.toggleList = () => document.getElementById("memberList").classList.toggle("open");
     
@@ -245,7 +291,7 @@
         if(uid === currentUser.uid) return;
         const div = document.createElement("div");
         div.className = "member-item";
-        div.innerHTML = `<span>${list[uid].name}</span> <button class="call-trigger" onclick="startCall('${uid}')">📞</button>`;
+        div.innerHTML = `<span>${list[uid].name}</span> <button class="call-trigger" onclick="startCall('${uid}')">📞 Call</button>`;
         cont.appendChild(div);
       });
     });
