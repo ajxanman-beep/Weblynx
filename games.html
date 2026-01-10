@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Games - Dark Theme</title>
+  <style>
+    /* Base Styles from Index */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { 
+        font-family: Arial, sans-serif; 
+        background: #1a1a1a; /* Dark background per image */
+        color: white;
+    }
+
+    /* Reuse your Sidebar/Header CSS */
+    .header { position: fixed; top: 0; left: 0; width: 100%; height: 60px; background: #2c2c2c; display: flex; align-items: center; padding: 0 20px; z-index: 100; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }
+    .hamburger { width: 30px; height: 30px; cursor: pointer; display: flex; flex-direction: column; justify-content: space-around; }
+    .hamburger span { width: 100%; height: 3px; background: white; border-radius: 2px; }
+    .user-info { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+    .avatar { width: 35px; height: 35px; border-radius: 50%; background: #4285f4; display: flex; align-items: center; justify-content: center; font-weight: bold; }
+    
+    .sidebar { position: fixed; top: 0; left: -280px; width: 280px; height: 100vh; background: #2c2c2c; transition: left 0.3s; z-index: 200; display: flex; flex-direction: column; }
+    .sidebar.open { left: 0; }
+    .sidebar-header { padding: 20px; background: #1a1a1a; color: white; font-size: 24px; font-weight: bold; }
+    .nav-item { padding: 15px 25px; cursor: pointer; color: white; transition: background 0.2s; }
+    .nav-item:hover { background: #3a3a3a; }
+    .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); opacity: 0; pointer-events: none; transition: opacity 0.3s; z-index: 150; }
+    .overlay.active { opacity: 1; pointer-events: all; }
+
+    /* Game Specific Styles (The Image Theme) */
+    .game-container {
+        margin-top: 80px;
+        padding: 20px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+        justify-content: center;
+    }
+
+    .game-card {
+        background: white; /* White block style from your image */
+        color: black;
+        padding: 20px 40px;
+        text-decoration: none;
+        font-weight: bold;
+        text-transform: lowercase; /* Matches "game" text in image */
+        font-size: 1.2rem;
+        border-radius: 2px;
+        transition: transform 0.2s, background 0.2s;
+        min-width: 120px;
+        text-align: center;
+        display: inline-block;
+    }
+
+    .game-card:hover {
+        transform: scale(1.05);
+        background: #ddd;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <div class="hamburger" onclick="toggleSidebar()">
+      <span></span><span></span><span></span>
+    </div>
+    <div class="user-info">
+      <div class="avatar" id="userAvatar">U</div>
+      <span id="headerUsername">User</span>
+    </div>
+  </div>
+
+  <div class="sidebar" id="sidebar">
+    <div class="sidebar-header">Menu</div>
+    <div class="nav-items">
+      <div class="nav-item" onclick="location.href='index.html'">🏠 Home</div>
+      <div class="nav-item" onclick="location.href='games.html'">🎮 Games</div>
+    </div>
+  </div>
+  <div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
+
+  <div class="game-container" id="gameGrid">
+    </div>
+
+  <script src="games.js"></script>
+
+  <script>
+    // Sidebar logic
+    function toggleSidebar() {
+      document.getElementById("sidebar").classList.toggle("open");
+      document.getElementById("overlay").classList.toggle("active");
+    }
+
+    // Dynamic Loading Logic
+    const grid = document.getElementById('gameGrid');
+
+    // Assuming games.js provides a 'games' variable
+    // Example format: const games = [{title: "pacman", url: "games/pacman.html"}];
+    function loadGames() {
+        if (typeof games !== 'undefined') {
+            games.forEach(game => {
+                const btn = document.createElement('a');
+                btn.href = game.url;
+                btn.className = 'game-card';
+                btn.innerText = game.title || 'game';
+                grid.appendChild(btn);
+            });
+        } else {
+            grid.innerHTML = "<p>No games found in games.js</p>";
+        }
+    }
+
+    window.onload = loadGames;
+  </script>
+</body>
+</html>
