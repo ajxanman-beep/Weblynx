@@ -89,45 +89,45 @@
     </div>
 
 <script>
-    // Sidebar logic
+    // Sidebar logic (Keep your existing toggle function)
     function toggleSidebar() {
         document.getElementById("sidebar").classList.toggle("open");
         document.getElementById("overlay").classList.toggle("active");
     }
 
-    // JSON Loading Logic
+    // JSON Loading Logic with Label Cleaning
     async function loadGames() {
         const grid = document.getElementById('gameGrid');
         
         try {
-            // Fetch the JSON file
             const response = await fetch('games.json');
-            
-            if (!response.ok) {
-                throw new Error('Could not load games.json');
-            }
+            if (!response.ok) throw new Error('Could not load games.json');
 
             const games = await response.json();
-
-            // Clear the grid and inject games
             grid.innerHTML = ''; 
             
             games.forEach(game => {
                 const btn = document.createElement('a');
-                btn.href = game.path;
+                btn.href = game.path; // Using 'path' per your request
                 btn.className = 'game-card';
-                // Using game.title or game.name depending on your JSON keys
-                btn.innerText = (game.label || game.name || 'game').toLowerCase();
+                
+                let displayLabel = game.label || 'game';
+
+                // Check if label starts with 'cl' (case-insensitive check optional)
+                if (displayLabel.toLowerCase().startsWith('cl')) {
+                    displayLabel = displayLabel.slice(2);
+                }
+
+                btn.innerText = displayLabel.toLowerCase();
                 grid.appendChild(btn);
             });
 
         } catch (error) {
             console.error('Error:', error);
-            grid.innerHTML = `<p style="color: red;">Error loading games list.</p>`;
+            grid.innerHTML = `<p style="color: red;">Error loading games.</p>`;
         }
     }
 
-    // Run the function when the page loads
     window.onload = loadGames;
 </script>
 </body>
