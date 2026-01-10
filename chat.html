@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Chat Room - Sync & Admin</title>
+  <title>Chat Room - Enhanced Admin</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     
@@ -38,16 +38,36 @@
     /* ADMIN CONTROLS */
     .admin-btn {
       padding: 8px 12px; color: white; border: none; border-radius: 4px;
-      cursor: pointer; font-weight: bold; font-size: 12px; display: none;
+      cursor: pointer; font-weight: bold; font-size: 12px; display: none; margin-left: 5px;
     }
-    #clearBtn { background: #ff4444; margin-left: 10px; }
-    #settingsBtn { background: #333; margin-left: 10px; }
+    #clearBtn { background: #ff4444; }
+    #kickBtn { background: #ff8800; }
+    #settingsBtn { background: #333; }
+    #memberListBtn { background: #2196f3; }
     
     .user-info { margin-left: auto; display: flex; align-items: center; gap: 10px; }
     .avatar {
       width: 35px; height: 35px; border-radius: 50%; background: #4285f4;
       display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;
     }
+    
+    /* MEMBER LIST */
+    #memberList {
+      position: fixed; right: -350px; top: 60px; width: 340px; height: calc(100vh - 60px);
+      background: white; box-shadow: -2px 0 10px rgba(0,0,0,0.1); transition: right 0.3s ease;
+      z-index: 99; padding: 20px; overflow-y: auto;
+    }
+    #memberList.open { right: 0; }
+    .member-list-title { font-size: 18px; font-weight: bold; margin-bottom: 15px; }
+    .member-item {
+      display: flex; justify-content: space-between; align-items: center; padding: 10px;
+      border-bottom: 1px solid #eee; cursor: pointer;
+    }
+    .member-item:hover { background: #f5f5f5; }
+    .member-status.online { color: #4caf50; }
+    .member-status.offline { color: #f44336; }
+    .member-controls { display: none; }
+    .member-item:hover .member-controls { display: flex; gap: 5px; }
     
     /* CHAT CONTAINER */
     #chatBox {
@@ -67,7 +87,19 @@
     }
     .message.own { background: #4285f4; color: white; margin-left: auto; border-bottom-right-radius: 4px; }
     .message.other { background: #e8e8e8; color: #333; margin-right: auto; border-bottom-left-radius: 4px; }
-    .message.admin-msg { border: 2px solid rgba(255,255,255,0.2); box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+    
+    .message.admin-gradient {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border: 2px solid rgba(255,255,255,0.3); box-shadow: 0 4px 15px rgba(102,126,234,0.4);
+      animation: gradientShift 3s ease-in-out infinite alternate;
+    }
+    .message.admin-gradient.animate {
+      animation: gradientShift 2s ease-in-out infinite;
+    }
+    @keyframes gradientShift {
+      0% { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+      100% { background: linear-gradient(135deg, #764ba2 0%, #f093fb 100%); }
+    }
 
     .message-user { font-size: 11px; opacity: 0.8; margin-bottom: 3px; font-weight: bold; position: relative; display: inline-block; }
     .message.own .message-user { text-align: right; width: 100%; }
@@ -84,7 +116,11 @@
     }
     .message-user:hover .admin-tooltip { visibility: visible; opacity: 1; }
     .admin-viewable { text-decoration: underline dotted; cursor: help; }
-    .ban-btn { background: #ff4444; color: white; border: none; padding: 2px 6px; border-radius: 3px; margin-left: 5px; cursor: pointer; }
+    .ban-btn, .kick-btn { 
+      background: #ff4444; color: white; border: none; padding: 2px 6px; 
+      border-radius: 3px; margin-left: 5px; cursor: pointer; font-size: 10px;
+    }
+    .kick-btn { background: #ff8800; }
 
     /* INPUT */
     #messageInputBox {
@@ -102,29 +138,52 @@
     body.dark-mode #messageInputBox { background: #2c2c2c; }
     body.dark-mode #messageInput { background: #1a1a1a; color: white; border-color: #444; }
     body.dark-mode #themeToggle { background: #444; border-color: #666; }
+    body.dark-mode #memberList { background: #2c2c2c; }
+    body.dark-mode .member-item { border-bottom-color: #444; }
+    body.dark-mode .member-item:hover { background: #444; }
 
     /* MODAL */
     #settingsModal {
       display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-      background: white; padding: 20px; border-radius: 8px; z-index: 200; width: 300px;
+      background: white; padding: 20px; border-radius: 8px; z-index: 200; width: 350px;
     }
     body.dark-mode #settingsModal { background: #333; color: white; }
     .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 150; }
+    .setting-group { margin-bottom: 15px; }
+    .setting-group label { display: block; margin-bottom: 5px; font-weight: bold; }
+    .checkbox-group { display: flex; align-items: center; gap: 10px; margin-top: 5px; }
   </style>
 </head>
 <body>
   <div class="modal-overlay" id="modalOverlay" onclick="closeSettings()"></div>
   <div id="settingsModal">
-    <h3 style="margin-bottom:15px">Admin Appearance</h3>
-    <div style="margin-bottom:15px">
-      <label>Bubble Color:</label><br>
-      <input type="color" id="bubbleColorInput" style="width:100%">
+    <h3>Admin Settings</h3>
+    <div class="setting-group">
+      <label>Bubble Color:</label>
+      <input type="color" id="bubbleColorInput" value="#667eea" style="width:100%">
     </div>
-    <div style="margin-bottom:15px">
-      <label>Name Color:</label><br>
-      <input type="color" id="nameColorInput" style="width:100%">
+    <div class="setting-group">
+      <label>Name Color:</label>
+      <input type="color" id="nameColorInput" value="#ffffff" style="width:100%">
     </div>
-    <button style="width:100%; padding:10px; background:#4285f4; color:white; border:none; border-radius:5px; cursor:pointer" onclick="saveAdminSettings()">Save Changes</button>
+    <div class="setting-group">
+      <label>Gradient Effect:</label>
+      <label class="checkbox-group">
+        <input type="checkbox" id="gradientToggle"> Enable Gradient
+      </label>
+    </div>
+    <div class="setting-group">
+      <label>Animation:</label>
+      <label class="checkbox-group">
+        <input type="checkbox" id="animateToggle"> Enable Animation
+      </label>
+    </div>
+    <button style="width:100%; padding:10px; background:#4285f4; color:white; border:none; border-radius:5px; cursor:pointer; margin-top:10px" onclick="saveAdminSettings()">Save Changes</button>
+  </div>
+
+  <div id="memberList">
+    <div class="member-list-title">Online Members (<span id="onlineCount">0</span>)</div>
+    <div id="memberListContent"></div>
   </div>
 
   <div class="header">
@@ -132,7 +191,9 @@
     <button id="themeToggle" onclick="toggleTheme()">🌙</button>
     
     <button id="clearBtn" class="admin-btn" onclick="clearAllMessages()">CLEAR</button>
+    <button id="kickBtn" class="admin-btn" onclick="openKickModal()">KICK</button>
     <button id="settingsBtn" class="admin-btn" onclick="openSettings()">⚙</button>
+    <button id="memberListBtn" class="admin-btn" onclick="toggleMemberList()">👥</button>
     
     <div class="user-info">
       <div class="avatar" id="userAvatar">U</div>
@@ -166,18 +227,76 @@
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const database = getDatabase(app);
-    const dbRef = ref(database);
     
     let currentUser = null;
     let currentUsername = "User";
     let isAdmin = false;
     let isBanned = false;
-    let myBubbleColor = "#4285f4";
-    let myNameColor = "#ffffff";
+    let adminSettings = { gradient: true, animate: true, bubbleColor: "#667eea", nameColor: "#ffffff" };
+    let onlineUsers = {};
 
     window.goBack = () => { window.location.href = 'index.html'; };
 
-    // --- THEME SYNC LOGIC ---
+    // Online Status Tracking
+    function updateOnlineStatus(online) {
+      if (currentUser) {
+        set(ref(database, `online/${currentUser.uid}`), {
+          username: currentUsername,
+          timestamp: serverTimestamp(),
+          isOnline: online
+        });
+      }
+    }
+
+    // Member List Management
+    window.toggleMemberList = () => {
+      const list = document.getElementById('memberList');
+      list.classList.toggle('open');
+    };
+
+    function updateMemberList() {
+      const content = document.getElementById('memberListContent');
+      const onlineCount = document.getElementById('onlineCount');
+      const users = Object.entries(onlineUsers).filter(([uid, data]) => data.isOnline);
+      
+      content.innerHTML = '';
+      users.forEach(([uid, data]) => {
+        const div = document.createElement('div');
+        div.className = 'member-item';
+        div.innerHTML = `
+          <div>
+            <div style="font-weight: bold;">${data.username}</div>
+            <div class="member-status online" style="font-size: 12px;">● Online</div>
+          </div>
+          ${isAdmin ? `<div class="member-controls">
+            <button class="ban-btn" onclick="toggleBan('${uid}', false)">BAN</button>
+            <button class="kick-btn" onclick="kickUser('${uid}')">KICK</button>
+          </div>` : ''}
+        `;
+        content.appendChild(div);
+      });
+      
+      onlineCount.textContent = users.length;
+    }
+
+    // Admin Controls
+    window.kickUser = (uid) => {
+      if (confirm("Kick this user?")) {
+        remove(ref(database, `online/${uid}`));
+      }
+    };
+
+    window.toggleBan = (targetUid, isBanned) => {
+      if (confirm(isBanned ? "Unban user?" : "Ban user?")) {
+        update(ref(database, `users/${targetUid}`), { isBanned: !isBanned });
+      }
+    };
+
+    window.clearAllMessages = () => {
+      if (confirm("Delete ALL messages?")) set(ref(database, 'messages'), null).then(() => window.location.reload());
+    };
+
+    // Theme & Settings
     window.toggleTheme = () => {
       const isDark = document.body.classList.toggle('dark-mode');
       document.getElementById("themeToggle").textContent = isDark ? "☀️" : "🌙";
@@ -189,31 +308,34 @@
     };
 
     window.openSettings = () => {
+      document.getElementById('bubbleColorInput').value = adminSettings.bubbleColor;
+      document.getElementById('nameColorInput').value = adminSettings.nameColor;
+      document.getElementById('gradientToggle').checked = adminSettings.gradient;
+      document.getElementById('animateToggle').checked = adminSettings.animate;
       document.getElementById('modalOverlay').style.display = 'block';
       document.getElementById('settingsModal').style.display = 'block';
     };
+
     window.closeSettings = () => {
       document.getElementById('modalOverlay').style.display = 'none';
       document.getElementById('settingsModal').style.display = 'none';
     };
+
     window.saveAdminSettings = () => {
-      const newBubble = document.getElementById('bubbleColorInput').value;
-      const newName = document.getElementById('nameColorInput').value;
-      update(ref(database, `users/${currentUser.uid}`), { adminBubbleColor: newBubble, adminNameColor: newName })
-        .then(() => { closeSettings(); alert("Colors Saved!"); });
+      adminSettings = {
+        gradient: document.getElementById('gradientToggle').checked,
+        animate: document.getElementById('animateToggle').checked,
+        bubbleColor: document.getElementById('bubbleColorInput').value,
+        nameColor: document.getElementById('nameColorInput').value
+      };
+      update(ref(database, `adminSettings/global`), adminSettings);
+      closeSettings();
+      alert("Settings saved!");
     };
 
-    window.toggleBan = (targetUid, status) => {
-      if (confirm(status ? "Unban user?" : "Ban user?")) {
-        update(ref(database, `users/${targetUid}`), { isBanned: !status });
-      }
-    };
-
-    window.clearAllMessages = () => {
-      if (confirm("Delete ALL messages?")) set(ref(database, 'messages'), null).then(() => window.location.reload());
-    };
-
+    // Message Handling
     window.handleKeyPress = (e) => { if (e.key === 'Enter') sendMessage(); };
+    
     window.handleTyping = () => {
       if (!currentUser || isBanned) return;
       set(ref(database, `typing/${currentUser.uid}`), currentUsername);
@@ -231,13 +353,15 @@
         email: currentUser.email,
         timestamp: serverTimestamp(),
         isAdminMsg: isAdmin,
-        bubbleColor: isAdmin ? myBubbleColor : null,
-        nameColor: isAdmin ? myNameColor : null
+        adminSettings: isAdmin ? adminSettings : null
       });
       input.value = "";
+      updateOnlineStatus(true);
     };
 
-    window.deleteMessage = (id) => { if(confirm("Delete?")) remove(ref(database, `messages/${id}`)); };
+    window.deleteMessage = (id) => { 
+      if(confirm("Delete this message?")) remove(ref(database, `messages/${id}`)); 
+    };
 
     function loadMessages() {
       const chatBox = document.getElementById("chatBox");
@@ -248,23 +372,36 @@
         div.id = `msg-${snap.key}`;
         div.className = `message ${isOwn ? 'own' : 'other'}`;
         
-        if (msg.isAdminMsg && msg.bubbleColor) {
-          div.classList.add('admin-msg');
-          div.style.background = msg.bubbleColor;
+        // Admin message styling
+        if (msg.isAdminMsg && msg.adminSettings) {
+          const settings = msg.adminSettings;
+          if (settings.gradient) {
+            div.classList.add('admin-gradient');
+            if (settings.animate) div.classList.add('animate');
+          } else {
+            div.style.background = settings.bubbleColor;
+          }
         }
 
         const userSpan = document.createElement("div");
         userSpan.className = "message-user";
         userSpan.textContent = isOwn ? "You" : (msg.username || "Unknown");
-        if (msg.isAdminMsg && msg.nameColor) userSpan.style.color = msg.nameColor;
+        if (msg.isAdminMsg && msg.adminSettings?.nameColor) {
+          userSpan.style.color = msg.adminSettings.nameColor;
+        }
 
+        // Admin message controls
         if (isAdmin && !isOwn) {
           userSpan.classList.add("admin-viewable");
-          get(child(dbRef, `users/${msg.userId}/isBanned`)).then(s => {
+          get(child(ref(database), `users/${msg.userId}/isBanned`)).then(s => {
             const banned = s.val() === true;
             const tool = document.createElement("span");
             tool.className = "admin-tooltip";
-            tool.innerHTML = `${msg.email}<br><button class="ban-btn" onclick="event.stopPropagation(); toggleBan('${msg.userId}', ${banned})">${banned?'UNBAN':'BAN'}</button>`;
+            tool.innerHTML = `${msg.email}<br>
+              <button class="ban-btn" onclick="event.stopPropagation(); toggleBan('${msg.userId}', ${banned})">
+                ${banned ? 'UNBAN' : 'BAN'}
+              </button>
+              <button class="kick-btn" onclick="event.stopPropagation(); kickUser('${msg.userId}')">KICK</button>`;
             userSpan.appendChild(tool);
           });
         }
@@ -290,49 +427,64 @@
         chatBox.appendChild(div);
         chatBox.scrollTop = chatBox.scrollHeight;
       });
+      
       onChildRemoved(ref(database, 'messages'), (snap) => {
         const el = document.getElementById(`msg-${snap.key}`);
         if (el) el.remove();
       });
     }
 
+    // Auth & Initialization
     onAuthStateChanged(auth, async (user) => {
       if (!user) { window.location.href = 'index.html'; return; }
       currentUser = user;
+      updateOnlineStatus(true);
       
+      // Load user data
       onValue(ref(database, `users/${user.uid}`), (snap) => {
         const data = snap.val() || {};
         currentUsername = data.username || user.email.split('@')[0];
         isAdmin = data.isAdmin === true;
         isBanned = data.isBanned === true;
-        myBubbleColor = data.adminBubbleColor || "#4285f4";
-        myNameColor = data.adminNameColor || "#ffffff";
-
-        // Sync Theme
-        if (data.appearance === 'dark') {
-          document.body.classList.add('dark-mode');
-          document.getElementById("themeToggle").textContent = "☀️";
-        } else {
-          document.body.classList.remove('dark-mode');
-          document.getElementById("themeToggle").textContent = "🌙";
-        }
 
         document.getElementById("headerUsername").textContent = currentUsername;
         document.getElementById("userAvatar").textContent = currentUsername.charAt(0).toUpperCase();
-        document.getElementById("clearBtn").style.display = isAdmin ? "block" : "none";
-        document.getElementById("settingsBtn").style.display = isAdmin ? "block" : "none";
+        
+        // Show admin controls
+        ['clearBtn', 'kickBtn', 'settingsBtn', 'memberListBtn'].forEach(id => {
+          document.getElementById(id).style.display = isAdmin ? "block" : "none";
+        });
+        
         document.getElementById("messageInput").disabled = isBanned;
         if(isBanned) document.getElementById("messageInput").placeholder = "BANNED";
       });
-      
+
+      // Load global admin settings
+      onValue(ref(database, 'adminSettings/global'), (snap) => {
+        if (snap.val()) adminSettings = { ...adminSettings, ...snap.val() };
+      });
+
+      // Load messages and typing
       loadMessages();
+      
       onValue(ref(database, 'typing'), (s) => {
         const d = s.val();
         const ind = document.getElementById("typingIndicator");
         if(!d) { ind.textContent=""; return; }
-        const t = Object.keys(d).filter(u => u !== currentUser.uid).map(u => d[u]);
+        const t = Object.keys(d).filter(u => u !== currentUser?.uid).map(u => d[u]);
         ind.textContent = t.length ? t.join(", ") + " is typing..." : "";
       });
+
+      // Track online users
+      onValue(ref(database, 'online'), (snap) => {
+        onlineUsers = snap.val() || {};
+        updateMemberList();
+      });
+    });
+
+    // Cleanup on unload
+    window.addEventListener('beforeunload', () => {
+      updateOnlineStatus(false);
     });
   </script>
 </body>
