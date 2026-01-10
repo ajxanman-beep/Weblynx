@@ -114,10 +114,10 @@
             
             games.forEach(game => {
                 const btn = document.createElement('a');
-                btn.href = game.url;
+                btn.href = game.path;
                 btn.className = 'game-card';
                 // Using game.title or game.name depending on your JSON keys
-                btn.innerText = (game.title || game.name || 'game').toLowerCase();
+                btn.innerText = (game.label || game.name || 'game').toLowerCase();
                 grid.appendChild(btn);
             });
 
