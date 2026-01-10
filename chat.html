@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Chat Room - Enhanced Admin</title>
+  <title>Chat Room - Sync & Admin</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     
@@ -61,7 +61,7 @@
     .member-list-title { font-size: 18px; font-weight: bold; margin-bottom: 15px; }
     .member-item {
       display: flex; justify-content: space-between; align-items: center; padding: 10px;
-      border-bottom: 1px solid #eee; cursor: pointer;
+      border-bottom: 1px solid #eee; cursor: default;
     }
     .member-item:hover { background: #f5f5f5; }
     .member-status.online { color: #4caf50; }
@@ -88,17 +88,20 @@
     .message.own { background: #4285f4; color: white; margin-left: auto; border-bottom-right-radius: 4px; }
     .message.other { background: #e8e8e8; color: #333; margin-right: auto; border-bottom-left-radius: 4px; }
     
+    /* Smooth gradient admin bubble */
     .message.admin-gradient {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      border: 2px solid rgba(255,255,255,0.3); box-shadow: 0 4px 15px rgba(102,126,234,0.4);
-      animation: gradientShift 3s ease-in-out infinite alternate;
+      background: linear-gradient(135deg, #667eea, #764ba2, #f093fb);
+      background-size: 300% 300%;
+      border: 2px solid rgba(255,255,255,0.3);
+      box-shadow: 0 4px 15px rgba(102,126,234,0.4);
     }
     .message.admin-gradient.animate {
-      animation: gradientShift 2s ease-in-out infinite;
+      animation: gradientShift 6s ease-in-out infinite;
     }
     @keyframes gradientShift {
-      0% { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
-      100% { background: linear-gradient(135deg, #764ba2 0%, #f093fb 100%); }
+      0%   { background-position: 0% 50%; }
+      50%  { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
     }
 
     .message-user { font-size: 11px; opacity: 0.8; margin-bottom: 3px; font-weight: bold; position: relative; display: inline-block; }
@@ -211,7 +214,7 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
     import { getDatabase, ref, push, remove, set, update, onChildAdded, onChildRemoved, onValue, get, child, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
     
     const firebaseConfig = {
@@ -227,6 +230,7 @@
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const database = getDatabase(app);
+    const dbRef = ref(database);
     
     let currentUser = null;
     let currentUsername = "User";
@@ -248,7 +252,7 @@
       }
     }
 
-    // Member List Management
+    // Member List toggle
     window.toggleMemberList = () => {
       const list = document.getElementById('memberList');
       list.classList.toggle('open');
@@ -282,13 +286,14 @@
     // Admin Controls
     window.kickUser = (uid) => {
       if (confirm("Kick this user?")) {
+        update(ref(database, `users/${uid}`), { kicked: true });
         remove(ref(database, `online/${uid}`));
       }
     };
 
-    window.toggleBan = (targetUid, isBanned) => {
-      if (confirm(isBanned ? "Unban user?" : "Ban user?")) {
-        update(ref(database, `users/${targetUid}`), { isBanned: !isBanned });
+    window.toggleBan = (targetUid, isCurrentlyBanned) => {
+      if (confirm(isCurrentlyBanned ? "Unban user?" : "Ban user?")) {
+        update(ref(database, `users/${targetUid}`), { isBanned: !isCurrentlyBanned });
       }
     };
 
@@ -390,10 +395,10 @@
           userSpan.style.color = msg.adminSettings.nameColor;
         }
 
-        // Admin message controls
+        // Admin tooltip for other users' messages
         if (isAdmin && !isOwn) {
           userSpan.classList.add("admin-viewable");
-          get(child(ref(database), `users/${msg.userId}/isBanned`)).then(s => {
+          get(child(dbRef, `users/${msg.userId}/isBanned`)).then(s => {
             const banned = s.val() === true;
             const tool = document.createElement("span");
             tool.className = "admin-tooltip";
@@ -438,7 +443,6 @@
     onAuthStateChanged(auth, async (user) => {
       if (!user) { window.location.href = 'index.html'; return; }
       currentUser = user;
-      updateOnlineStatus(true);
       
       // Load user data
       onValue(ref(database, `users/${user.uid}`), (snap) => {
@@ -447,16 +451,39 @@
         isAdmin = data.isAdmin === true;
         isBanned = data.isBanned === true;
 
+        // handle kicked (non-admin only)
+        if (data.kicked && !isAdmin) {
+          alert("You were kicked from the chat.");
+          updateOnlineStatus(false);
+          signOut(auth).finally(() => {
+            window.location.href = 'index.html';
+          });
+          return;
+        }
+
         document.getElementById("headerUsername").textContent = currentUsername;
         document.getElementById("userAvatar").textContent = currentUsername.charAt(0).toUpperCase();
-        
-        // Show admin controls
-        ['clearBtn', 'kickBtn', 'settingsBtn', 'memberListBtn'].forEach(id => {
+
+        // Admin-only buttons (member list is visible for everyone)
+        ['clearBtn', 'kickBtn', 'settingsBtn'].forEach(id => {
           document.getElementById(id).style.display = isAdmin ? "block" : "none";
         });
-        
+        document.getElementById('memberListBtn').style.display = "block";
+
         document.getElementById("messageInput").disabled = isBanned;
-        if(isBanned) document.getElementById("messageInput").placeholder = "BANNED";
+        if (isBanned) document.getElementById("messageInput").placeholder = "BANNED";
+
+        // Sync theme
+        if (data.appearance === 'dark') {
+          document.body.classList.add('dark-mode');
+          document.getElementById("themeToggle").textContent = "☀️";
+        } else {
+          document.body.classList.remove('dark-mode');
+          document.getElementById("themeToggle").textContent = "🌙";
+        }
+
+        // set online status after username known
+        updateOnlineStatus(true);
       });
 
       // Load global admin settings
