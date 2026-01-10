@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Chat Room - Sync & Admin</title>
+  <title>Chat</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     
@@ -41,7 +41,7 @@
       cursor: pointer; font-weight: bold; font-size: 12px; display: none; margin-left: 5px;
     }
     #clearBtn { background: #ff4444; }
-    #kickBtn { background: #ff8800; } /* now BAN button */
+    #kickBtn { background: #ff8800; } /* BAN */
     #settingsBtn { background: #333; }
     #memberListBtn { background: #2196f3; }
     
@@ -194,7 +194,7 @@
     <button id="themeToggle" onclick="toggleTheme()">🌙</button>
     
     <button id="clearBtn" class="admin-btn" onclick="clearAllMessages()">CLEAR</button>
-    <button id="kickBtn" class="admin-btn" onclick="openKickModal()">BAN</button>
+    <button id="kickBtn" class="admin-btn">BAN</button>
     <button id="settingsBtn" class="admin-btn" onclick="openSettings()">⚙</button>
     <button id="memberListBtn" class="admin-btn" onclick="toggleMemberList()">👥</button>
     
@@ -284,14 +284,12 @@
     }
 
     // Admin Controls
-    // "Mute" = cannot send messages (isBanned flag)
     window.toggleMute = (targetUid, isCurrentlyMuted) => {
       if (confirm(isCurrentlyMuted ? "Unmute user?" : "Mute user?")) {
         update(ref(database, `users/${targetUid}`), { isBanned: !isCurrentlyMuted });
       }
     };
 
-    // "Ban" = force user out (kicked flag)
     window.banUser = (uid) => {
       if (confirm("Ban this user from the chat?")) {
         update(ref(database, `users/${uid}`), { kicked: true });
@@ -379,7 +377,6 @@
         div.id = `msg-${snap.key}`;
         div.className = `message ${isOwn ? 'own' : 'other'}`;
         
-        // Admin message styling
         if (msg.isAdminMsg && msg.adminSettings) {
           const settings = msg.adminSettings;
           if (settings.gradient) {
@@ -397,7 +394,6 @@
           userSpan.style.color = msg.adminSettings.nameColor;
         }
 
-        // Admin tooltip for other users' messages
         if (isAdmin && !isOwn) {
           userSpan.classList.add("admin-viewable");
           get(child(dbRef, `users/${msg.userId}/isBanned`)).then(s => {
@@ -446,14 +442,12 @@
       if (!user) { window.location.href = 'index.html'; return; }
       currentUser = user;
       
-      // Load user data
       onValue(ref(database, `users/${user.uid}`), (snap) => {
         const data = snap.val() || {};
         currentUsername = data.username || user.email.split('@')[0];
         isAdmin = data.isAdmin === true;
         isBanned = data.isBanned === true;
 
-        // handle banned-from-room (kicked) non-admin
         if (data.kicked && !isAdmin) {
           alert("You were banned from the chat.");
           updateOnlineStatus(false);
@@ -466,16 +460,18 @@
         document.getElementById("headerUsername").textContent = currentUsername;
         document.getElementById("userAvatar").textContent = currentUsername.charAt(0).toUpperCase();
 
-        // Admin-only buttons (member list visible for everyone)
         ['clearBtn', 'kickBtn', 'settingsBtn'].forEach(id => {
           document.getElementById(id).style.display = isAdmin ? "block" : "none";
         });
         document.getElementById('memberListBtn').style.display = "block";
 
         document.getElementById("messageInput").disabled = isBanned;
-        if (isBanned) document.getElementById("messageInput").placeholder = "MUTED";
+        if (isBanned) {
+          document.getElementById("messageInput").placeholder = "MUTED";
+        } else {
+          document.getElementById("messageInput").placeholder = "Type a message...";
+        }
 
-        // Sync theme
         if (data.appearance === 'dark') {
           document.body.classList.add('dark-mode');
           document.getElementById("themeToggle").textContent = "☀️";
@@ -484,16 +480,13 @@
           document.getElementById("themeToggle").textContent = "🌙";
         }
 
-        // set online status after username known
         updateOnlineStatus(true);
       });
 
-      // Load global admin settings
       onValue(ref(database, 'adminSettings/global'), (snap) => {
         if (snap.val()) adminSettings = { ...adminSettings, ...snap.val() };
       });
 
-      // Load messages and typing
       loadMessages();
       
       onValue(ref(database, 'typing'), (s) => {
@@ -504,14 +497,12 @@
         ind.textContent = t.length ? t.join(", ") + " is typing..." : "";
       });
 
-      // Track online users
       onValue(ref(database, 'online'), (snap) => {
         onlineUsers = snap.val() || {};
         updateMemberList();
       });
     });
 
-    // Cleanup on unload
     window.addEventListener('beforeunload', () => {
       updateOnlineStatus(false);
     });
