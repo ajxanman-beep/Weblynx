@@ -37,11 +37,23 @@
     .sidebar { 
       position: fixed; top: 0; left: -280px; width: 280px; height: 100vh; 
       background: #2c2c2c; transition: left 0.3s; z-index: 1200; 
+      display: flex; flex-direction: column; /* Added to support footer */
     }
     .sidebar.open { left: 0; }
+    .sidebar-header { padding: 20px; font-weight: bold; background: #1a1a1a; }
+    .nav-items { flex: 1; overflow-y: auto; } /* Container for main nav */
     .nav-item { padding: 15px 25px; cursor: pointer; border-bottom: 1px solid #3a3a3a; transition: 0.2s; }
     .nav-item:hover { background: #3a3a3a; }
     
+    /* Sidebar Footer Buttons */
+    .sidebar-footer { padding: 15px; border-top: 1px solid #3a3a3a; background: #1a1a1a; }
+    .footer-btn { 
+      width: 100%; padding: 12px; margin: 5px 0; border: none; border-radius: 4px; 
+      cursor: pointer; font-size: 16px; color: white; font-weight: bold;
+    }
+    .settings-btn { background: #666; }
+    .logout-btn { background: #ea4335; }
+
     .overlay { 
       position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
       background: rgba(0,0,0,0.7); opacity: 0; pointer-events: none; 
@@ -57,7 +69,7 @@
     }
     #gameSearch:focus { border-color: #4285f4; }
 
-    /* --- Game Grid (Image Theme) --- */
+    /* --- Game Grid --- */
     .game-container { padding: 20px; display: flex; flex-wrap: wrap; gap: 15px; justify-content: center; }
     .game-card { 
       background: white; color: black; padding: 15px 30px; cursor: pointer; 
@@ -75,7 +87,7 @@
       font-weight: bold; border-radius: 4px; z-index: 1500; 
     }
 
-    /* --- Movable & Resizable Chat Widget --- */
+    /* --- Movable Chat Widget --- */
     #chatWidget {
       position: absolute; top: 80px; left: 20px; width: 320px; height: 450px;
       min-width: 200px; min-height: 100px; background: #2c2c2c; 
@@ -89,7 +101,6 @@
     #chatIframe { flex: 1; border: none; background: white; }
     .min-btn { cursor: pointer; background: rgba(0,0,0,0.2); border: none; color: white; padding: 0 10px; border-radius: 3px; }
     
-    /* Resize Handle */
     #chatResizeHandle {
       width: 20px; height: 20px; position: absolute; right: 0; bottom: 0;
       cursor: nwse-resize; z-index: 1501; background: transparent;
@@ -111,10 +122,20 @@
   </div>
 
   <div class="sidebar" id="sidebar">
-    <div style="padding:20px; font-weight:bold; background:#1a1a1a;">Menu</div>
-    <div class="nav-item" onclick="window.location.href='index.html'">🏠 Home</div>
-    <div class="nav-item" onclick="window.location.href='games.html'">🎮 Games</div>
+    <div class="sidebar-header">Menu</div>
+    <div class="nav-items">
+      <div class="nav-item" onclick="window.location.href='index.html'">🏠 Home</div>
+      <div class="nav-item" onclick="window.location.href='chat.html'">💬 Chat</div>
+      <div class="nav-item" onclick="window.location.href='games.html'">🎮 Games</div>
+      <div class="nav-item" onclick="navigateTo('movies')">🎬 Movies</div>
+      <div class="nav-item" onclick="navigateTo('web')">🌐 Web</div>
+    </div>
+    <div class="sidebar-footer">
+      <button class="footer-btn settings-btn" onclick="window.location.href='settings.html'">⚙️ Settings</button>
+      <button class="footer-btn logout-btn" onclick="handleLogout()">🚪 Logout</button>
+    </div>
   </div>
+
   <div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
 
   <div class="search-container">
@@ -137,9 +158,21 @@
   </div>
 
   <script>
+    // Navigation helper
+    function navigateTo(page) {
+      alert(`Navigating to ${page}`);
+      toggleSidebar();
+    }
+
+    // Placeholder for Logout logic
+    function handleLogout() {
+      // If you are using Firebase, add your signOut(auth) logic here
+      alert("Logging out...");
+      window.location.href = 'index.html';
+    }
+
     let allGames = [];
 
-    // Load Games from JSON
     async function loadGames() {
       try {
         const response = await fetch('games.json');
@@ -148,7 +181,6 @@
       } catch (e) { console.error("Could not load games.json"); }
     }
 
-    // Render Buttons with "cl" cleaning
     function renderGames(list) {
       const grid = document.getElementById('gameGrid');
       grid.innerHTML = '';
@@ -168,7 +200,6 @@
       });
     }
 
-    // Non-case sensitive search
     function filterGames() {
       const q = document.getElementById('gameSearch').value.toLowerCase();
       const filtered = allGames.filter(g => {
@@ -198,7 +229,7 @@
       w.style.height = isHidden ? "450px" : "45px";
     }
 
-    /* --- SMOOTH INTERACTION LOGIC --- */
+    /* --- Draggable/Resizable Logic --- */
     const widget = document.getElementById("chatWidget");
     const header = document.getElementById("chatHeader");
     const handle = document.getElementById("chatResizeHandle");
@@ -215,24 +246,19 @@
       startH = widget.offsetHeight;
       startL = widget.offsetLeft;
       startT = widget.offsetTop;
-      
-      // IMPORTANT: Disable pointer events on iframe so it doesn't steal the mouse
       chatIframe.style.pointerEvents = "none";
-      
       window.addEventListener('mousemove', runAction);
       window.addEventListener('mouseup', stopAction);
     }
 
     function runAction(e) {
       if (!activeAction) return;
-
       if (activeAction === 'resizing') {
         const newW = startW + (e.clientX - startX);
         const newH = startH + (e.clientY - startY);
         if (newW > 200) widget.style.width = newW + 'px';
         if (newH > 100) widget.style.height = newH + 'px';
-      } 
-      else if (activeAction === 'dragging') {
+      } else if (activeAction === 'dragging') {
         widget.style.left = (startL + (e.clientX - startX)) + 'px';
         widget.style.top = (startT + (e.clientY - startY)) + 'px';
       }
@@ -240,7 +266,7 @@
 
     function stopAction() {
       activeAction = null;
-      chatIframe.style.pointerEvents = "auto"; // Re-enable chat interaction
+      chatIframe.style.pointerEvents = "auto";
       window.removeEventListener('mousemove', runAction);
       window.removeEventListener('mouseup', stopAction);
     }
