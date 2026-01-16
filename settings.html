@@ -26,7 +26,6 @@
       border: 1px solid rgba(0, 0, 0, 0.1);
     }
 
-    /* Dark mode override */
     body.dark-mode .settings-section {
       background: rgba(30, 30, 30, 0.6);
       border: 1px solid #333;
@@ -39,27 +38,36 @@
       padding: 15px 0;
       border-bottom: 1px solid rgba(128, 128, 128, 0.2);
     }
+    .settings-item.column { flex-direction: column; align-items: flex-start; gap: 10px; }
 
     .settings-item:last-child { border-bottom: none; }
     .settings-label { color: #888; font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 700; }
-    .settings-value { font-size: 16px; margin-top: 5px; color: inherit; }
+    .settings-value { font-size: 16px; margin-top: 5px; color: inherit; width: 100%; word-break: break-all;}
 
     .reveal-link { color: #4285f4; cursor: pointer; font-size: 13px; text-decoration: none; margin-left: 10px; font-weight: 600; }
     .reveal-link:hover { text-decoration: underline; }
 
     .edit-btn {
-      background: rgba(66, 133, 244, 0.1);
-      color: #4285f4;
-      padding: 8px 20px;
-      border-radius: 8px;
-      border: 1px solid rgba(66, 133, 244, 0.2);
-      cursor: pointer;
-      transition: 0.2s;
-      font-weight: 600;
+      background: rgba(66, 133, 244, 0.1); color: #4285f4; padding: 8px 20px;
+      border-radius: 8px; border: 1px solid rgba(66, 133, 244, 0.2);
+      cursor: pointer; transition: 0.2s; font-weight: 600;
     }
     .edit-btn:hover { background: #4285f4; color: white; border-color: #4285f4; }
+    .edit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
-    /* Appearance Toggles */
+    .nexus-input {
+        width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ccc;
+        background: transparent; color: inherit; font-family: inherit; margin-top: 5px;
+    }
+    body.dark-mode .nexus-input { border-color: #444; color: white; }
+
+    /* Profile Card specific styles */
+    .avatar-container { position: relative; width: 100px; height: 100px; margin-right: 25px; }
+    .avatar-preview {
+        width: 100px; height: 100px; border-radius: 50%; object-fit: cover;
+        border: 3px solid #4285f4; background: #eee;
+    }
+
     .appearance-toggle { display: flex; gap: 10px; margin-top: 15px; }
     .toggle-option {
       flex: 1; padding: 12px; background: rgba(128, 128, 128, 0.1);
@@ -70,35 +78,53 @@
       background: rgba(66, 133, 244, 0.15); border-color: #4285f4; color: #4285f4;
     }
 
-    /* Danger Zone */
     .danger-section { border: 1px solid rgba(234, 67, 53, 0.3) !important; }
-    
     .danger-btn {
       width: 100%; padding: 14px; border-radius: 10px; font-weight: 800;
-      cursor: pointer; transition: 0.3s; margin-top: 10px; border: 1px solid transparent;
-      letter-spacing: 1px;
+      cursor: pointer; transition: 0.3s; margin-top: 10px; border: 1px solid transparent; letter-spacing: 1px;
     }
-    
-    .logout-btn-full {
-      background: rgba(234, 67, 53, 0.1); color: #ea4335; border: 1px solid rgba(234, 67, 53, 0.3);
-    }
+    .logout-btn-full { background: rgba(234, 67, 53, 0.1); color: #ea4335; border: 1px solid rgba(234, 67, 53, 0.3); }
     .logout-btn-full:hover { background: #ea4335; color: white; }
-
     .delete-btn {
       background: transparent; color: #888; font-size: 12px; border: none;
       margin-top: 20px; text-decoration: underline; opacity: 0.5; cursor: pointer;
     }
-    .delete-btn:hover { color: #ea4335; opacity: 1; }
   </style>
 </head>
 <body class="dark-mode">
 
   <canvas id="particleCanvas"></canvas>
-  
   <script src="global.js"></script>
 
   <div class="settings-page">
     <h2 style="margin-bottom: 30px; font-weight: 300; letter-spacing: -1px; font-size: 32px;">System Settings</h2>
+
+    <div class="settings-section">
+      <div style="margin-bottom: 15px; font-size: 18px; font-weight: bold; color: #4285f4;">Public Profile</div>
+      
+      <div class="settings-item">
+        <div style="display:flex; align-items:center; width: 100%;">
+            <div class="avatar-container">
+                <img id="avatarPreview" src="" class="avatar-preview">
+                <input type="file" id="pfpFileInput" accept="image/*" style="display:none;">
+                <div style="display: flex; gap: 5px; justify-content: center; margin-top: 8px;">
+                    <button class="edit-btn" id="uploadBtn" style="font-size: 10px; padding: 4px 8px;">Upload</button>
+                    <button class="edit-btn" id="removePfpBtn" style="font-size: 10px; padding: 4px 8px; border-color: #ea4335; color: #ea4335;">✖</button>
+                </div>
+            </div>
+            <div style="flex: 1;">
+                <div class="settings-label">Profile Picture URL</div>
+                <input type="text" id="avatarInput" class="nexus-input" placeholder="URL loads automatically after upload...">
+            </div>
+        </div>
+      </div>
+
+      <div class="settings-item column">
+        <div class="settings-label">Bio / About Me</div>
+        <textarea id="bioInput" class="nexus-input" rows="3" placeholder="Tell the world about yourself..."></textarea>
+        <button class="edit-btn" id="saveProfileBtn" style="align-self: flex-end; margin-top: 10px;">Save Profile Changes</button>
+      </div>
+    </div>
 
     <div class="settings-section">
       <div class="settings-item">
@@ -118,14 +144,6 @@
         </div>
         <button class="edit-btn" id="editUserBtn">Change</button>
       </div>
-
-      <div class="settings-item">
-        <div>
-          <div class="settings-label">Security</div>
-          <div class="settings-value">Account Password</div>
-        </div>
-        <button class="edit-btn" id="changePassBtn">Update</button>
-      </div>
     </div>
 
     <div class="settings-section">
@@ -137,13 +155,7 @@
     </div>
 
     <div class="settings-section danger-section">
-      <div class="settings-label" style="color: #ea4335;">Danger Zone</div>
-      <p style="font-size: 12px; color: #888; margin: 8px 0 15px 0; line-height: 1.4;">
-        Actions here are sensitive. Logout to clear your session, or delete your account to remove all data from Nexus servers.
-      </p>
-      
       <button class="danger-btn logout-btn-full" id="fullLogoutBtn">LOGOUT SESSION</button>
-      
       <div style="text-align: center;">
         <button class="delete-btn" id="deleteAccountBtn">Permanently Delete Account</button>
       </div>
@@ -152,7 +164,7 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-    import { getAuth, onAuthStateChanged, signOut, deleteUser, updatePassword } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+    import { getAuth, onAuthStateChanged, signOut, deleteUser } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
     import { getDatabase, ref, get, update, child, remove } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
     const firebaseConfig = {
@@ -173,12 +185,8 @@
     let currentUsername = "";
     let storedEmail = "";
 
-    // --- Auth State Monitor ---
     onAuthStateChanged(auth, async user => {
-      if (!user) {
-        window.location.href = "rpg.html";
-        return;
-      }
+      if (!user) { window.location.href = 'Home.html'; return; }
       currentUser = user;
       storedEmail = user.email;
       
@@ -186,91 +194,91 @@
       const data = snap.val() || {};
       
       currentUsername = data.username || user.email.split('@')[0];
-      
-      // Update UI
       document.getElementById('usernameDisplay').textContent = currentUsername;
-      localStorage.setItem('userName', currentUsername);
+      document.getElementById('bioInput').value = data.bio || "";
+      document.getElementById('avatarInput').value = data.pfp || "";
       
-      // Sync Theme
-      if (data.appearance === "dark") {
-          updateUIAppearance("dark");
-      } else {
-          updateUIAppearance("light");
-      }
-
-      // Signal global.js navigation to refresh
-      window.dispatchEvent(new Event('nameUpdated'));
+      // Load image
+      document.getElementById('avatarPreview').src = data.pfp || `https://ui-avatars.com/api/?background=random&name=${currentUsername}`;
+      
+      updateUIAppearance(data.appearance === "dark" ? "dark" : "light");
     });
+
+    // --- Cloudinary Upload Logic ---
+    const pfpFileInput = document.getElementById('pfpFileInput');
+    const uploadBtn = document.getElementById('uploadBtn');
+
+    uploadBtn.onclick = () => pfpFileInput.click();
+
+    pfpFileInput.addEventListener("change", async () => {
+      const file = pfpFileInput.files[0];
+      if(!file) return;
+
+      const originalText = uploadBtn.textContent;
+      uploadBtn.textContent = "...";
+      uploadBtn.disabled = true;
+
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("upload_preset", "z1d4s4al"); 
+
+      try {
+        const res = await fetch("https://api.cloudinary.com/v1_1/dcbo4oozo/upload", { 
+          method: "POST", 
+          body: formData 
+        });
+        
+        if (!res.ok) throw new Error("Upload failed. Check Cloudinary settings.");
+        
+        const data = await res.json();
+        if(data.secure_url) {
+          document.getElementById('avatarInput').value = data.secure_url;
+          document.getElementById('avatarPreview').src = data.secure_url;
+        }
+      } catch(err) {
+        alert("Upload failed: " + err.message);
+      } finally {
+        uploadBtn.textContent = originalText;
+        uploadBtn.disabled = false;
+        pfpFileInput.value = "";
+      }
+    });
+
+    // --- Remove Photo Logic ---
+    document.getElementById('removePfpBtn').onclick = () => {
+        if(confirm("Remove profile picture?")) {
+            document.getElementById('avatarInput').value = "";
+            document.getElementById('avatarPreview').src = `https://ui-avatars.com/api/?background=random&name=${currentUsername}`;
+        }
+    };
+
+    // --- Save Profile Changes ---
+    document.getElementById('saveProfileBtn').onclick = async () => {
+      try {
+        await update(ref(database, `users/${currentUser.uid}`), {
+          pfp: document.getElementById('avatarInput').value.trim(),
+          bio: document.getElementById('bioInput').value.trim()
+        });
+        alert("Profile saved!");
+      } catch(e) {
+        alert("Error saving profile.");
+      }
+    };
 
     // --- Username Update ---
     document.getElementById('editUserBtn').onclick = async () => {
       const newName = prompt("Enter new username:", currentUsername);
       if (newName && newName !== currentUsername) {
         await update(ref(database, `users/${currentUser.uid}`), { username: newName });
-        localStorage.setItem('userName', newName);
         location.reload();
       }
     };
 
-    // --- Password Update ---
-    document.getElementById('changePassBtn').onclick = async () => {
-        const newPass = prompt("Enter new password (min 6 chars):");
-        if (!newPass || newPass.length < 6) {
-            alert("Password too short or empty.");
-            return;
-        }
-        const confirmPass = prompt("Confirm new password:");
-        if (newPass !== confirmPass) {
-            alert("Passwords do not match.");
-            return;
-        }
-
-        try {
-            await updatePassword(currentUser, newPass);
-            alert("Password updated successfully.");
-        } catch (err) {
-            alert("Security Error: Please log out and log back in to verify your identity before changing passwords.");
-        }
-    };
-
-    // --- Logout ---
-    document.getElementById('fullLogoutBtn').onclick = async () => {
-        if (confirm("Terminate current session?")) {
-            localStorage.clear();
-            sessionStorage.clear();
-            await signOut(auth);
-            window.location.replace("rpg.html");
-        }
-    };
-
-    // --- Delete Account ---
-    document.getElementById('deleteAccountBtn').onclick = async () => {
-        const confirmName = prompt(`WARNING: This is permanent. Type your username (${currentUsername}) to confirm deletion:`);
-        
-        if (confirmName === currentUsername) {
-            try {
-                const uid = currentUser.uid;
-                await remove(ref(database, `users/${uid}`)); // Wipe DB entry
-                await deleteUser(currentUser);              // Wipe Auth entry
-                localStorage.clear();
-                window.location.replace("rpg.html");
-            } catch (err) {
-                alert("Sensitive Action: Please re-login to Nexus and try deleting again immediately.");
-            }
-        }
-    };
-
     // --- Appearance Management ---
     function updateUIAppearance(mode) {
-      if (mode === 'dark') {
-        document.body.classList.add('dark-mode');
-        document.getElementById('darkMode').classList.add('active');
-        document.getElementById('lightMode').classList.remove('active');
-      } else {
-        document.body.classList.remove('dark-mode');
-        document.getElementById('lightMode').classList.add('active');
-        document.getElementById('darkMode').classList.remove('active');
-      }
+      document.body.classList.toggle('dark-mode', mode === 'dark');
+      document.getElementById('darkMode').classList.toggle('active', mode === 'dark');
+      document.getElementById('lightMode').classList.toggle('active', mode !== 'dark');
     }
 
     document.getElementById('lightMode').onclick = () => saveTheme('light');
@@ -278,13 +286,10 @@
 
     async function saveTheme(mode) {
       updateUIAppearance(mode);
-      localStorage.setItem('theme', mode);
-      if (currentUser) {
-          await update(ref(database, `users/${currentUser.uid}`), { appearance: mode });
-      }
+      if (currentUser) await update(ref(database, `users/${currentUser.uid}`), { appearance: mode });
     }
 
-    // --- Email Reveal ---
+    // --- Helpers ---
     document.getElementById('emailRevealBtn').onclick = function() {
       const display = document.getElementById('emailDisplay');
       if (display.textContent.includes('*')) {
@@ -295,8 +300,8 @@
           this.textContent = "Show";
       }
     };
-  </script>
 
-  <script src="particles.js"></script>
+    document.getElementById('fullLogoutBtn').onclick = () => signOut(auth).then(() => window.location.href = 'Home.html');
+  </script>
 </body>
 </html>
